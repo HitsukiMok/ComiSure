@@ -1,251 +1,116 @@
-# ComiSure
+# 🎨 ComiSure
 
-**Trustless USDC escrow for freelance digital art commissions on Stellar.**
+**Trustless USDC escrow for freelance digital art commissions on the Stellar Network.**
 
----
-
-## Problem
-
-Freelance digital artists and their clients in the Philippines face rampant fraud on informal channels:
-
-- **Chargeback scams** — Clients pay via PayPal, receive the artwork, then file a dispute to claw back the payment.
-- **Ghost artists** — Artists accept GCash or Maya upfront payments, then disappear without delivering.
-
-Commission sizes of ₱500–₱5,000 are too small for legal recourse and too common to ignore. The creative community needs a trust layer that doesn't depend on either party's goodwill.
-
-## Solution
-
-ComiSure replaces informal payment channels with a Soroban smart contract escrow:
-
-1. The **client** deposits USDC into the contract — funds are locked on-chain, unreachable by either party.
-2. The **artist** delivers the finished artwork off-chain (Twitter DM, Google Drive, etc.).
-3. The **client** calls `approve_release` — USDC is instantly routed to the artist's wallet.
-4. If the artist ghosts, the **admin** calls `admin_refund` → client is made whole.
-5. If the client withholds approval maliciously, the **admin** calls `admin_force_release` → artist is paid.
-
-Stellar's sub-cent fees and 5-second settlement make trustless micro-transactions economically viable even for a ₱500 commission.
+ComiSure replaces informal, trust-based payment channels with a decentralized Soroban smart contract. Protect yourself from chargeback scams and ghost artists using instant, on-chain settlements.
 
 ---
 
-## Stellar Features Used
+## 🏗️ Platform Architecture
 
-| Feature | Role in ComiSure |
-|---|---|
-| **Soroban Smart Contracts** | Core escrow state machine — deposit, release, refund, force-release |
-| **Stellar USDC (via SAC)** | Stable payment asset; avoids XLM price volatility for artists |
-| **XLM** | Network fee currency for all contract invocations |
-| **Trustlines** | Artist wallet must hold a USDC trustline; the token transfer enforces this automatically at the protocol level |
+ComiSure is built as a complete Web3 application:
+
+- **Frontend (React + Vite + TailwindCSS 3.4)**: A highly-aesthetic, cyberpunk-themed web app featuring dynamic framer-motion animations. It uses `@creit-tech/stellar-wallets-kit` to connect user wallets seamlessly directly to the Stellar network.
+- **Backend (Python FastAPI + SQLite)**: An off-chain data layer managing milestones, artist uploads, and caching dispute claims for the Admin dashboard.
+- **Smart Contract (Soroban/Rust)**: The immutable escrow layer that natively locks and routes USDC upon approval or dispute resolution.
 
 ---
 
-## Prerequisites
+## 🎯 The Problem & Solution
 
+Freelance digital artists and clients in the Philippines face rampant fraud on informal channels (PayPal chargebacks, disappearing GCash commissions).
+
+**The ComiSure Escrow Flow:**
+1. **Deposit**: The client deposits USDC into the Soroban contract. The funds are locked on-chain.
+2. **Deliver**: The artist tracks milestones and delivers the finished artwork.
+3. **Approve**: The client clicks `approve_release` on the UI. The smart contract instantly routes USDC to the artist.
+4. **Dispute**: If the artist ghosts, the admin triggers `admin_refund`. If the client unfairly withholds approval, the admin triggers `admin_force_release`.
+
+### Stellar Features Used
+* **Soroban Smart Contracts**: Unbreakable escrow state machine.
+* **Stellar USDC (SAC)**: Stable digital asset avoiding crypto price volatility.
+* **Stellar Wallets Kit**: Universal wallet connection (Freighter, xBull, etc.)
+
+---
+
+## 🏆 For Certification Pre-Requisites
+
+* **GitHub Repo**: [HitsukiMok/ComiSure](https://github.com/HitsukiMok/ComiSure)
+* **Contract ID**: `c4aa3cf23d50a42bab6c3c3797a88e238a965b589162341a7bb0135153c2915b`
+* **Stellar Expert**: [View Transaction on Testnet](https://stellar.expert/explorer/testnet/tx/d63ac48098d54a206deacd7fd6018a06e5ee5a2781694beb7510ad0cd307a8cc)
+
+---
+
+## 🚀 Running the Web App Locally
+
+Before running the application, ensure you have [Node.js](https://nodejs.org/) and [Python 3](https://python.org/) installed.
+
+### 1. Fast API Backend
 ```bash
-# 1. Rust toolchain (stable + Soroban-compatible Wasm target)
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-rustup target add wasm32v1-none
-
-# 2. Stellar CLI (includes the Soroban subcommands)
-#    Minimum required version: stellar-cli 22.0.0
-cargo install --locked stellar-cli --features opt
-
-# Verify installation
-stellar --version   # should print stellar 22.x.x or higher
+cd backend
+python -m venv venv
+.\venv\Scripts\activate   # Use `source venv/bin/activate` on Mac/Linux
+pip install fastapi uvicorn sqlmodel
+uvicorn main:app --reload
 ```
+*The API will run at http://127.0.0.1:8000.*
 
-> **Note:** The Soroban CLI was merged into the Stellar CLI in 2024. All commands below use `stellar contract …`.
+### 2. React Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
+*The web app will run at http://localhost:5173. You must have the [Freighter browser extension](https://www.freighter.app/) installed to connect your wallet!*
 
 ---
 
-## Build
+## ⚙️ Smart Contract Development
 
+> **📖 Note:** For a comprehensive breakdown of the smart contract's internal logic, data structures, and function signatures, please refer to the [Smart Contract API Documentation](SMART_CONTRACT_API.md).
+
+### Prerequisites
+* Rust toolchain target `wasm32v1-none`
+* Stellar CLI `22.0.0+`
+
+### Build & Test
 ```bash
 # Compile the contract to an optimised Wasm binary
 stellar contract build
 
-# Output: target/wasm32v1-none/release/comi_sure.wasm
-```
-
----
-
-## Run Tests
-
-```bash
-# Run all three unit tests
+# Run cargo tests
 cargo test
-
-# Run with output printed (useful for debugging)
-cargo test -- --nocapture
 ```
 
-Expected output:
-
-```
-running 3 tests
-test test::tests::test_happy_path_deposit_and_approve_release ... ok
-test test::tests::test_unauthorized_wallet_cannot_call_approve_release ... ok
-test test::tests::test_state_and_balance_are_correct_after_deposit ... ok
-
-test result: ok. 3 passed; 0 failed
-```
-
----
-
-## Deploy to Testnet
-
+### CLI Invocations
+If you wish to interact with the contract manually via the CLI:
 ```bash
-# 1. Generate (or import) a testnet identity
-stellar keys generate --global alice --network testnet
+# Initialize
+stellar contract invoke --id $CONTRACT_ID --source alice --network testnet -- initialize --client <CLIENT_PUB> --artist <ARTIST_PUB> --admin <ADMIN_PUB> --token <USDC_CONTRACT>
 
-# 2. Fund the identity via Friendbot
-stellar keys fund alice --network testnet
+# Deposit 500 USDC (7 Decimals)
+stellar contract invoke --id $CONTRACT_ID --source client --network testnet -- deposit_funds --caller <CLIENT_PUB> --amount 5000000000
 
-# 3. Deploy the compiled Wasm
-stellar contract deploy \
-  --wasm target/wasm32v1-none/release/comi_sure.wasm \
-  --source alice \
-  --network testnet
-
-# The command prints a Contract ID — save it:
-export CONTRACT_ID=<printed_contract_id>
+# Approve Release
+stellar contract invoke --id $CONTRACT_ID --source client --network testnet -- approve_release --caller <CLIENT_PUB>
 ```
 
 ---
 
-## Sample CLI Invocations
+## 📂 Project Structure
 
-### `initialize` — Wire up participants after deployment
-
-```bash
-stellar contract invoke \
-  --id $CONTRACT_ID \
-  --source alice \
-  --network testnet \
-  -- \
-  initialize \
-  --client  GCLIENTWALLETADDRESSAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA \
-  --artist  GARTISTWALLETADDRESSAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA \
-  --admin   GADMINWALLETADDRESSAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA \
-  --token   GBDC5...USDCTOKENCONTRACTADDRESS
-```
-
----
-
-### `deposit_funds` — Client locks 500 USDC into escrow
-
-```bash
-# amount = 500 USDC × 10_000_000 (7-decimal) = 5_000_000_000
-stellar contract invoke \
-  --id $CONTRACT_ID \
-  --source client-key \
-  --network testnet \
-  -- \
-  deposit_funds \
-  --caller GCLIENTWALLETADDRESSAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA \
-  --amount 5000000000
-```
-
-Expected output: `null` (void return on success; state transitions to Funded on-chain)
-
----
-
-### `approve_release` — Client approves after artwork delivery
-
-```bash
-stellar contract invoke \
-  --id $CONTRACT_ID \
-  --source client-key \
-  --network testnet \
-  -- \
-  approve_release \
-  --caller GCLIENTWALLETADDRESSAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-```
-
-Expected output: `null` (void return; artist's USDC balance increases within 5 seconds)
-
----
-
-### `admin_refund` — Admin refunds client (artist ghosted)
-
-```bash
-stellar contract invoke \
-  --id $CONTRACT_ID \
-  --source admin-key \
-  --network testnet \
-  -- \
-  admin_refund \
-  --caller GADMINWALLETADDRESSAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-```
-
----
-
-### `admin_force_release` — Admin pays artist (client withholding approval)
-
-```bash
-stellar contract invoke \
-  --id $CONTRACT_ID \
-  --source admin-key \
-  --network testnet \
-  -- \
-  admin_force_release \
-  --caller GADMINWALLETADDRESSAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-```
-
----
-
-### Read contract state
-
-```bash
-# Check current escrow state
-stellar contract invoke --id $CONTRACT_ID --source alice --network testnet \
-  -- get_state
-
-# Check locked amount
-stellar contract invoke --id $CONTRACT_ID --source alice --network testnet \
-  -- get_amount
-```
-
----
-
-## Project Structure
-
-```
-comi_sure/
-├── Cargo.toml          # Package manifest and dependency pinning
-├── README.md           # This file
+```text
+ComiSure/
+├── frontend/           # React + Vite application & Wallet SDK integration
+├── backend/            # FastAPI off-chain dispute & milestone tracker
+├── Cargo.toml          # Soroban package dependencies
 └── src/
-    ├── lib.rs          # Soroban contract: DataKey, EscrowState, all four functions
-    └── test.rs         # Three cargo tests: happy path, auth rejection, state check
+    ├── lib.rs          # Soroban Escrow Smart Contract code
+    └── test.rs         # Local testings for happy path & unauthorized calls
 ```
 
 ---
-### For Certification Pre-Requisites
-**GitHub Repo**: https://github.com/HitsukiMok/ComiSure
-**Contract ID**: c4aa3cf23d50a42bab6c3c3797a88e238a965b589162341a7bb0135153c2915b
-**Stellar Expert**: https://stellar.expert/explorer/testnet/tx/d63ac48098d54a206deacd7fd6018a06e5ee5a2781694beb7510ad0cd307a8cc
 
----
+## 📄 License
 
-## License
-
-MIT License
-
-Copyright (c) 2025 ComiSure Contributors
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+MIT License. Copyright (c) 2025 ComiSure Contributors.
