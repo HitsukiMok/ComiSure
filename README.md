@@ -110,7 +110,28 @@ ComiSure/
 ```
 
 ---
+### For Certification Pre-Requisites
+**GitHub Repo**: https://github.com/HitsukiMok/ComiSure
 
-## 📄 License
 
-MIT License. Copyright (c) 2025 ComiSure Contributors.
+**Contract ID**: c4aa3cf23d50a42bab6c3c3797a88e238a965b589162341a7bb0135153c2915b
+
+
+**Stellar Expert**: https://stellar.expert/explorer/testnet/tx/d63ac48098d54a206deacd7fd6018a06e5ee5a2781694beb7510ad0cd307a8cc
+
+
+P.S: The Frontend of this branch is still not ready yet, as of updating this readme 🙂‍↕️
+---
+
+## License
+
+MIT License
+
+Copyright (c) 2025 ComiSure Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions
