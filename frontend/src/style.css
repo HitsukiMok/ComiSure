@@ -1,0 +1,108 @@
+:root {
+    --bg-color: #0f172a;
+    --card-bg: #1e293b;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --accent: #3b82f6;
+    --accent-hover: #2563eb;
+    --success: #10b981;
+    --danger: #ef4444;
+    --admin: #8b5cf6;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+header {
+    width: 100%;
+    padding: 20px 40px;
+    background-color: var(--card-bg);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-sizing: border-box;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+main {
+    width: 100%;
+    max-width: 800px;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+h2 {
+    margin-top: 40px;
+    border-bottom: 2px solid var(--card-bg);
+    padding-bottom: 10px;
+}
+
+.card {
+    background-color: var(--card-bg);
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.admin-card {
+    border: 1px solid var(--admin);
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    background-color: var(--bg-color);
+    border: 1px solid #334155;
+    color: var(--text-main);
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.primary-btn { background-color: var(--accent); color: white; }
+.primary-btn:hover { background-color: var(--accent-hover); }
+
+.action-btn { width: 100%; margin-top: 10px; background-color: var(--accent); color: white; }
+.action-btn:hover { background-color: var(--accent-hover); }
+
+.success-btn { background-color: var(--success); }
+.success-btn:hover { background-color: #059669; }
+
+.danger-btn { background-color: var(--danger); }
+.danger-btn:hover { background-color: #dc2626; }
+
+.admin-btn { background-color: var(--admin); }
+.admin-btn:hover { background-color: #7c3aed; }
+
+.admin-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.status-msg {
+    margin-top: 10px;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
