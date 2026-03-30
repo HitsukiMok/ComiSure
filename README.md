@@ -38,24 +38,12 @@ Stellar's sub-cent fees and 5-second settlement make trustless micro-transaction
 
 ---
 
-## Suggested MVP Timeline (48-Hour Hackathon)
-
-| Hours | Milestone |
-|---|---|
-| 0 – 6 | Finalize contract logic, compile Wasm, deploy to testnet |
-| 6 – 18 | Build minimal Next.js front-end: connect Freighter wallet, call `deposit_funds` and `approve_release` |
-| 18 – 30 | Wire up contract reads (`get_state`, `get_amount`) to the UI; show escrow status badge |
-| 30 – 40 | End-to-end demo flow with two browser windows (client + artist); record Loom walkthrough |
-| 40 – 48 | Polish UI, write pitch deck slides, prepare live demo for judges |
-
----
-
 ## Prerequisites
 
 ```bash
-# 1. Rust toolchain (stable + wasm32 target)
+# 1. Rust toolchain (stable + Soroban-compatible Wasm target)
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-rustup target add wasm32-unknown-unknown
+rustup target add wasm32v1-none
 
 # 2. Stellar CLI (includes the Soroban subcommands)
 #    Minimum required version: stellar-cli 22.0.0
@@ -75,7 +63,7 @@ stellar --version   # should print stellar 22.x.x or higher
 # Compile the contract to an optimised Wasm binary
 stellar contract build
 
-# Output: target/wasm32-unknown-unknown/release/comi_sure.wasm
+# Output: target/wasm32v1-none/release/comi_sure.wasm
 ```
 
 ---
@@ -114,7 +102,7 @@ stellar keys fund alice --network testnet
 
 # 3. Deploy the compiled Wasm
 stellar contract deploy \
-  --wasm target/wasm32-unknown-unknown/release/comi_sure.wasm \
+  --wasm target/wasm32v1-none/release/comi_sure.wasm \
   --source alice \
   --network testnet
 
