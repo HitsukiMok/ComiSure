@@ -5,4 +5,3 @@
 
 
 **Stellar Expert**: https://stellar.expert/explorer/testnet/tx/d63ac48098d54a206deacd7fd6018a06e5ee5a2781694beb7510ad0cd307a8cc
-
