@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ComiSure | Art Commission Escrow</title>
+    <link rel="stylesheet" href="src/style.css">
+</head>
+<body>
+    <header>
+        <div class="logo">🎨 ComiSure</div>
+        <button id="connect-wallet-btn" class="primary-btn">Connect Freighter</button>
+    </header>
+
+    <main>
+        <section class="wallet-info">
+            <p>Connected Wallet: <span id="wallet-address">Not connected</span></p>
+        </section>
+
+        <section class="action-panel">
+            <h2>Start a Commission</h2>
+            <div class="card">
+                <h3>Client: Deposit Funds</h3>
+                <p>Lock USDC in the smart contract to secure the commission.</p>
+                <input type="text" id="artist-address" placeholder="Artist's Public Key">
+                <input type="number" id="deposit-amount" placeholder="Amount (USDC)">
+                <button id="deposit-btn" class="action-btn">Deposit into Escrow</button>
+                <p id="deposit-status" class="status-msg"></p>
+            </div>
+
+            <div class="card">
+                <h3>Client: Approve Artwork</h3>
+                <p>Release the locked funds to the artist upon receiving the final art.</p>
+                <input type="text" id="escrow-id" placeholder="Escrow ID (e.g., 1)">
+                <button id="approve-btn" class="action-btn success-btn">Approve & Release Funds</button>
+                <p id="approve-status" class="status-msg"></p>
+            </div>
+        </section>
+
+        <section class="admin-panel">
+            <h2>Admin Override (Dispute Resolution)</h2>
+            <div class="card admin-card">
+                <input type="text" id="admin-escrow-id" placeholder="Escrow ID">
+                <div class="admin-buttons">
+                    <button id="force-release-btn" class="action-btn admin-btn">Force Release (To Artist)</button>
+                    <button id="refund-btn" class="action-btn danger-btn">Refund (To Client)</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script type="module" src="/main.js"></script>
+</body>
+</html> 
