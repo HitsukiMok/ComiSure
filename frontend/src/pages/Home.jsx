@@ -42,7 +42,7 @@ export default function Home() {
           transition={{ duration: 0.8 }}
           className="text-center max-w-3xl"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm font-medium mb-8">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-textmain/5 border border-border text-sm font-medium mb-8">
              <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
              Live on Stellar Network (Soroban)
           </div>
@@ -59,7 +59,7 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link 
               to="/dashboard"
-              className="px-8 py-4 bg-primary hover:bg-primary/90 text-white rounded-full font-bold text-lg transition-transform hover:scale-105 shadow-[0_0_20px_rgba(109,40,217,0.5)] flex items-center gap-2"
+              className="px-8 py-4 bg-primary hover:bg-primary/90 text-white rounded-full font-bold text-lg transition-transform hover:scale-105 shadow-[0_0_20px_rgba(236,72,153,0.5)] flex items-center gap-2"
             >
               Start Commissioning <ArrowRight className="w-5 h-5" />
             </Link>
@@ -67,7 +67,7 @@ export default function Home() {
               href="https://stellarwalletskit.dev" 
               target="_blank" 
               rel="noreferrer"
-              className="px-8 py-4 bg-surface hover:bg-surface/80 border border-white/10 text-white rounded-full font-bold text-lg transition-colors flex items-center gap-2"
+              className="px-8 py-4 bg-surface hover:bg-surface/80 border border-border text-textmain rounded-full font-bold text-lg transition-colors flex items-center gap-2"
             >
               Get a Wallet
             </a>
@@ -90,9 +90,9 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {['1. Propose', '2. Lock Funds', '3. Deliver', '4. Approve'].map((step, i) => (
                <div key={i} className="glass-panel p-8 text-center relative group">
-                 <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
-                 <div className="text-5xl font-black text-white/5 mb-4 group-hover:text-primary/20 transition-colors">0{i+1}</div>
-                 <h3 className="text-xl font-bold text-white mb-2">{step}</h3>
+                 <div className="absolute inset-0 bg-gradient-to-b from-textmain/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
+                 <div className="text-5xl font-black text-textmain/5 mb-4 group-hover:text-primary/20 transition-colors">0{i+1}</div>
+                 <h3 className="text-xl font-bold text-textmain mb-2">{step}</h3>
                  <p className="text-textmuted text-sm">
                    {i === 0 && 'Client & Artist agree on the scope off-chain.'}
                    {i === 1 && 'Client deposits USDC directly into the smart contract.'}
@@ -113,9 +113,9 @@ export default function Home() {
                whileInView={{ opacity: 1, y: 0 }}
                transition={{ duration: 0.5, delay: i * 0.1 }}
                viewport={{ once: true }}
-               className="flex items-start gap-6 p-6 rounded-2xl border border-white/5 bg-white/5 hover:bg-white/10 transition-colors"
+               className="flex items-start gap-6 p-6 rounded-2xl border border-border bg-textmain/5 hover:bg-textmain/10 transition-colors"
              >
-                <div className="p-4 rounded-xl bg-surface/50 border border-white/5">
+                <div className="p-4 rounded-xl bg-surface/50 border border-border">
                   {f.icon}
                 </div>
                 <div>
