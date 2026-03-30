@@ -1,21 +1,115 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  body {
-    @apply bg-background text-textmain font-sans antialiased overflow-x-hidden;
-    margin: 0;
-    min-height: 100vh;
-  }
+/* ─── Light Theme Variables (default) ────────────────────────────────── */
+:root {
+  --color-background: #fdfbf7;
+  --color-surface: #ffffff;
+  --color-primary: #ec4899;
+  --color-accent: #6366f1;
+  --color-textmain: #0f172a;
+  --color-textmuted: #64748b;
+  --color-border: rgba(15, 23, 42, 0.12);
+  --tw-x: 50%;
+  --tw-y: 50%;
 }
 
+/* ─── Dark Theme Variables ────────────────────────────────────────────── */
+html.dark {
+  --color-background: #0b1120;
+  --color-surface: #111827;
+  --color-primary: #f472b6;
+  --color-accent: #38bdf8;
+  --color-textmain: #fcfcfc;
+  --color-textmuted: #9ca3af;
+  --color-border: rgba(255, 255, 255, 0.1);
+}
+
+/* ─── Base Reset ──────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-textmain);
+  margin: 0;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ─── View Transition – Circle Reveal (1 second) ─────────────────────── */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* The new snapshot expands as a circle from the click origin */
+::view-transition-new(root) {
+  z-index: 9999;
+  clip-path: circle(0% at var(--tw-x) var(--tw-y));
+  animation: circle-expand 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Keep the old snapshot fully visible beneath while new one expands */
+::view-transition-old(root) {
+  z-index: 1;
+  animation: none;
+}
+
+@keyframes circle-expand {
+  from { clip-path: circle(0% at var(--tw-x) var(--tw-y)); }
+  to   { clip-path: circle(150% at var(--tw-x) var(--tw-y)); }
+}
+
+/* ─── Theme Icon Wiggle on Long Hover ────────────────────────────────── */
+@keyframes wiggle {
+  0%   { transform: rotate(0deg); }
+  15%  { transform: rotate(-18deg); }
+  30%  { transform: rotate(18deg); }
+  45%  { transform: rotate(-14deg); }
+  60%  { transform: rotate(14deg); }
+  75%  { transform: rotate(-8deg); }
+  90%  { transform: rotate(8deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.theme-toggle-icon {
+  display: inline-flex;
+  transition: transform 0.2s ease;
+}
+
+.theme-toggle-btn:hover .theme-toggle-icon {
+  animation: wiggle 0.6s ease-in-out;
+  animation-delay: 0.5s; /* starts wiggling after half a second of hover */
+  animation-iteration-count: infinite;
+}
+
+/* ─── Glass Panel ─────────────────────────────────────────────────────── */
+/* Uses correct CSS variable, no broken rgba() / space-separated syntax */
 .glass-panel {
-  @apply bg-surface/60 backdrop-blur-xl border border-white/10 shadow-xl rounded-2xl;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
+/* ─── Gradient Text ───────────────────────────────────────────────────── */
 .gradient-text {
-  @apply text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent;
+  background: linear-gradient(to right, var(--color-primary), var(--color-accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Glow Effect ─────────────────────────────────────────────────────── */
+.text-glow {
+  text-shadow: 0 0 20px rgba(236, 72, 153, 0.5);
 }

@@ -8,7 +8,7 @@ import Admin from './pages/Admin';
 function App() {
   return (
     <Router>
-      <div className="min-h-screen bg-background text-textmain font-sans selection:bg-primary/30">
+      <div className="min-h-screen text-textmain font-sans selection:bg-primary/30 transition-colors duration-300">
         <Navbar />
         <Routes>
           <Route path="/" element={<Home />} />
