@@ -1,4 +1,4 @@
-import * as StellarSdk from '@stellar/stellar-sdk';
+import StellarSdk from '@stellar/stellar-sdk';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ComiSure Frontend - Barebones Version for Freighter + Stellar Testing
@@ -7,7 +7,6 @@ import * as StellarSdk from '@stellar/stellar-sdk';
 // ─── Network Configuration ───────────────────────────────────────────────────
 const NETWORK_PASSPHRASE = StellarSdk.Networks.TESTNET;
 const HORIZON_URL = "https://horizon-testnet.stellar.org";
-const horizon = new StellarSdk.Server(HORIZON_URL);
 
 // ─── App State ──────────────────────────────────────────────────────────────
 let userPublicKey = "";
@@ -19,6 +18,8 @@ const walletAddressDisplay = document.getElementById('wallet-address');
 const walletStatus = document.getElementById('wallet-status');
 const connectedAddress = document.getElementById('connected-address');
 const featuresSection = document.getElementById('features-section');
+const manualAddressInput = document.getElementById('manual-address');
+const useManualBtn = document.getElementById('use-manual-btn');
 
 const getBalanceBtn = document.getElementById('get-balance-btn');
 const balanceStatus = document.getElementById('balance-status');
@@ -44,15 +45,52 @@ let builtTransactionXdr = "";
 // WALLET CONNECTION
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+// ─── Manual Address Input ──────────────────────────────────────────────────
+function setUserAddress(address) {
+    if (!address.startsWith('G')) {
+        alert('Invalid address: must start with G');
+        return;
+    }
+    userPublicKey = address;
+    userAccount = null; // Reset account data
+    const displayKey = `${address.substring(0, 10)}...${address.substring(50)}`;
+    walletAddressDisplay.innerText = displayKey;
+    walletAddressDisplay.style.color = "var(--success)";
+    connectedAddress.innerText = address;
+    walletStatus.innerText = `✓ Using address: ${displayKey}`;
+    walletStatus.style.color = "var(--success)";
+    manualAddressInput.value = "";
+    console.log("Address set:", address);
+}
+
+useManualBtn.addEventListener('click', () => {
+    const address = manualAddressInput.value.trim();
+    if (address) {
+        setUserAddress(address);
+    } else {
+        alert('Please enter an address');
+    }
+});
+
+// Debug: Check if Freighter is available
+console.log("Freighter API available?", typeof window.freighterApi);
+console.log("Window keys:", Object.keys(window).filter(k => k.includes('freighter') || k.includes('Freighter')));
+
 async function connectWallet() {
     try {
+        console.log("Connect button clicked");
+        console.log("Freighter API:", window.freighterApi);
+        
         if (!window.freighterApi) {
-            walletStatus.innerText = "❌ Freighter not installed. Please install the browser extension.";
-            walletStatus.style.color = "var(--danger)";
+            walletStatus.innerText = "⚠️ Freighter not found. Use manual address input above.";
+            walletStatus.style.color = "var(--text-muted)";
             return;
         }
 
+        console.log("Requesting public key...");
         userPublicKey = await window.freighterApi.getPublicKey();
+        console.log("Got public key:", userPublicKey);
+        
         const displayKey = `${userPublicKey.substring(0, 10)}...${userPublicKey.substring(50)}`;
         
         walletAddressDisplay.innerText = displayKey;
@@ -63,11 +101,9 @@ async function connectWallet() {
         connectWalletBtn.disabled = true;
         connectWalletBtn.style.backgroundColor = "var(--success)";
         
-        walletStatus.innerText = `✓ Wallet connected: ${displayKey}`;
+        walletStatus.innerText = `✓ Freighter connected: ${displayKey}`;
         walletStatus.style.color = "var(--success)";
-        
-        // Show features section
-        featuresSection.style.display = 'block';
+        console.log("Freighter wallet connected successfully");
         
     } catch (error) {
         console.error("Wallet error:", error);
@@ -78,223 +114,197 @@ async function connectWallet() {
 
 connectWalletBtn.addEventListener('click', connectWallet);
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// CONTRACT STATE VIEWING
-// ═══════════════════════════════════════════════════════════════════════════════
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// GET ACCOUNT BALANCE (via Horizon REST API)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-async function loadContract() {
+async function getBalance() {
     if (!userPublicKey) {
-        setupStatus.innerText = "❌ Connect wallet first!";
-        setupStatus.style.color = "var(--danger)";
+        balanceStatus.innerText = "❌ Enter an address first";
+        balanceStatus.style.color = "var(--danger)";
         return;
     }
 
-    contractId = contractIdInput.value.trim();
-    if (!contractId || !contractId.startsWith('C')) {
-        setupStatus.innerText = "❌ Invalid contract ID. Must start with 'C'.";
-        setupStatus.style.color = "var(--danger)";
-        return;
-    }
+    balanceStatus.innerText = "⏳ Loading account...";
+    balanceStatus.style.color = "var(--text-muted)";
 
-    setupStatus.innerText = "Loading contract state...";
     try {
-        await refreshContractState();
+        // Fetch account info from Horizon REST API
+        const response = await fetch(`${HORIZON_URL}/accounts/${userPublicKey}`);
+        if (!response.ok) {
+            throw new Error(`Account not found: ${response.status}`);
+        }
         
-        // Hide setup section, show contract state
-        document.getElementById('setup-section').style.display = 'none';
-        document.getElementById('state-section').style.display = 'block';
-        document.getElementById('client-section').style.display = 'block';
-        document.getElementById('admin-section').style.display = 'block';
+        const account = await response.json();
         
-        setupStatus.innerText = "✓ Contract loaded successfully";
-        setupStatus.style.color = "var(--success)";
+        // Find XLM (native) balance
+        const nativeBalance = account.balances.find(b => b.asset_type === 'native');
+        const xlmBalance = nativeBalance ? nativeBalance.balance : "0";
+        
+        // Store account for later use
+        userAccount = account;
+        
+        balanceAmount.innerText = `${xlmBalance} XLM`;
+        accountSequence.innerText = account.sequence;
+        balanceDisplay.style.display = 'block';
+        
+        balanceStatus.innerText = "✓ Account loaded successfully";
+        balanceStatus.style.color = "var(--success)";
         
     } catch (error) {
         console.error(error);
-        setupStatus.innerText = `❌ Failed to load contract: ${error.message}`;
-        setupStatus.style.color = "var(--danger)";
+        balanceStatus.innerText = `❌ Error: ${error.message}`;
+        balanceStatus.style.color = "var(--danger)";
+        balanceDisplay.style.display = 'none';
     }
 }
 
-async function refreshContractState() {
-    try {
-        const horizon = new StellarSdk.Server(HORIZON_URL);
-        
-        // Read current state via get_state()
-        const stateCall = new StellarSdk.Contract(contractId).call('get_state');
-        const amountCall = new StellarSdk.Contract(contractId).call('get_amount');
-        
-        // For reading state, we simulate without submitting
-        const tx = new StellarSdk.TransactionBuilder(
-            await horizon.loadAccount(userPublicKey),
-            { fee: "1000", networkPassphrase: NETWORK_PASSPHRASE }
-        )
-        .addOperation(stateCall)
-        .setTimeout(30)
-        .build();
+getBalanceBtn.addEventListener('click', getBalance);
 
-        const prepared = await sorobanServer.prepareTransaction(tx);
-        const result = await sorobanServer.simulateTransaction(prepared);
-        
-        if (result.error) {
-            escrowStateDisplay.innerText = "Error reading state";
-            escrowAmountDisplay.innerText = "0 USDC";
-            return;
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// BUILD & SIGN TRANSACTION
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+async function buildTransaction() {
+    if (!userPublicKey) {
+        buildStatus.innerText = "❌ Enter an address first";
+        buildStatus.style.color = "var(--danger)"
+        return;
+    }
+
+    const recipient = document.getElementById('recipient-address').value.trim();
+    const amount = document.getElementById('send-amount').value.trim();
+
+    if (!recipient || !amount) {
+        buildStatus.innerText = "❌ Enter recipient and amount";
+        buildStatus.style.color = "var(--danger)";
+        return;
+    }
+
+    if (!recipient.startsWith('G')) {
+        buildStatus.innerText = "❌ Invalid recipient address (must start with G)";
+        buildStatus.style.color = "var(--danger)";
+        return;
+    }
+
+    buildStatus.innerText = "⏳ Building transaction...";
+    buildStatus.style.color = "var(--text-muted)";
+
+    try {
+        if (!userAccount) {
+            // Fetch account info from Horizon
+            const response = await fetch(`${HORIZON_URL}/accounts/${userPublicKey}`);
+            if (!response.ok) {
+                throw new Error("Account not found on network");
+            }
+            userAccount = await response.json();
         }
 
-        // Parse result from simulation
-        const stateValue = result.result?.invokeHostFunction?.return_value;
-        const states = ['Pending', 'Funded', 'Released', 'Refunded'];
-        const currentState = stateValue ? states[parseInt(stateValue)] : 'Unknown';
-        
-        escrowStateDisplay.innerText = currentState || 'Unknown';
-        escrowStateDisplay.style.color = 
-            currentState === 'Funded' ? 'var(--accent)' :
-            currentState === 'Released' ? 'var(--success)' :
-            currentState === 'Refunded' ? 'var(--danger)' : 'var(--text-muted)';
-        
-    } catch (error) {
-        console.warn('State read is read-only in test environment:', error.message);
-        escrowStateDisplay.innerText = '(Viewing not supported in test)';
-        escrowAmountDisplay.innerText = 'Check contract directly';
-    }
-}
-
-loadContractBtn.addEventListener('click', loadContract);
-refreshStateBtn.addEventListener('click', refreshContractState);
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// TRANSACTION HELPER: Execute contract invocation
-// ═══════════════════════════════════════════════════════════════════════════════
-
-async function invokeContract(functionName, args, statusElement) {
-    if (!userPublicKey) {
-        statusElement.innerText = "❌ Connect wallet first!";
-        statusElement.style.color = "var(--danger)";
-        return false;
-    }
-
-    if (!contractId) {
-        statusElement.innerText = "❌ Load contract first!";
-        statusElement.style.color = "var(--danger)";
-        return false;
-    }
-
-    try {
-        statusElement.innerText = `⏳ Building ${functionName} transaction...`;
-        statusElement.style.color = "var(--text-muted)";
-
-        const horizon = new StellarSdk.Server(HORIZON_URL);
-        const account = await horizon.loadAccount(userPublicKey);
-
-        const contract = new StellarSdk.Contract(contractId);
-        let tx = new StellarSdk.TransactionBuilder(account, {
-            fee: "10000",
+        const tx = new StellarSdk.TransactionBuilder(userAccount, {
+            fee: "100",
             networkPassphrase: NETWORK_PASSPHRASE,
         })
-        .addOperation(contract.call(functionName, ...args))
-        .setTimeout(30)
+        .addOperation(
+            StellarSdk.Operation.payment({
+                destination: recipient,
+                asset: StellarSdk.Asset.native(),
+                amount: amount,
+            })
+        )
+        .setTimeout(300)
         .build();
 
-        statusElement.innerText = `⏳ Simulating transaction...`;
-        const preparedTx = await sorobanServer.prepareTransaction(tx);
+        builtTransaction = tx;
+        builtTransactionXdr = tx.toXDR();
 
-        statusElement.innerText = `⏳ Requesting Freighter signature...`;
-        const signedXdr = await window.freighterApi.signTransaction(
-            preparedTx.toXDR(),
-            NETWORK_PASSPHRASE
-        );
-        const signedTx = StellarSdk.TransactionBuilder.fromXDR(signedXdr, NETWORK_PASSPHRASE);
+        txDetails.innerText = `${tx.operations.length} operation(s) | Fee: ${parseFloat(tx.fee) / 1000000} XLM | Seq: ${tx.sequence}`;
 
-        statusElement.innerText = `⏳ Submitting to Stellar network...`;
-        const response = await sorobanServer.sendTransaction(signedTx);
-        
-        statusElement.innerText = `✓ ${functionName} succeeded! Hash: ${response.hash.substring(0, 16)}...`;
-        statusElement.style.color = "var(--success)";
-        
-        // Refresh state after transaction
-        setTimeout(() => refreshContractState(), 5000);
-        return true;
+        txPreview.style.display = 'block';
+        buildStatus.innerText = "✓ Transaction ready to sign";
+        buildStatus.style.color = "var(--success)";
 
     } catch (error) {
-        console.error(`${functionName} error:`, error);
-        const msg = error.response?.data?.extras?.result_codes?.transaction ||error.message || 'Unknown error';
-        statusElement.innerText = `❌ ${functionName} failed: ${msg}`;
-        statusElement.style.color = "var(--danger)";
-        return false;
+        console.error(error);
+        buildStatus.innerText = `❌ Error: ${error.message}`;
+        buildStatus.style.color = "var(--danger)";
+        txPreview.style.display = 'none';
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// CLIENT OPERATIONS
-// ═══════════════════════════════════════════════════════════════════════════════
-
-async function depositFunds() {
-    const artistAddr = document.getElementById('artist-address-input').value.trim();
-    const adminAddr = document.getElementById('admin-address-input').value.trim();
-    const usdcToken = document.getElementById('usdc-token-input').value.trim();
-    const amountUSDC = document.getElementById('deposit-amount').value.trim();
-    const statusText = document.getElementById('deposit-status');
-
-    if (!artistAddr || !adminAddr || !usdcToken || !amountUSDC) {
-        statusText.innerText = "❌ Fill in all fields";
-        statusText.style.color = "var(--danger)";
+async function signTransaction() {
+    if (!builtTransactionXdr) {
+        signStatus.innerText = "❌ Build transaction first";
+        signStatus.style.color = "var(--danger)";
         return;
     }
 
-    if (!Number.isFinite(parseFloat(amountUSDC)) || parseFloat(amountUSDC) <= 0) {
-        statusText.innerText = "❌ Amount must be a positive number";
-        statusText.style.color = "var(--danger)";
+    signStatus.innerText = "⏳ Requesting signature from Freighter...";
+    signStatus.style.color = "var(--text-muted)";
+
+    try {
+        const signedXdr = await window.freighterApi.signTransaction(
+            builtTransactionXdr,
+            NETWORK_PASSPHRASE
+        );
+
+        const signedTx = StellarSdk.TransactionBuilder.fromXDR(signedXdr, NETWORK_PASSPHRASE);
+
+        signStatus.innerText = `✓ Transaction signed! Hash: ${signedTx.hash().toString('hex').substring(0, 16)}...`;
+        signStatus.style.color = "var(--success)";
+        signTxBtn.disabled = true;
+        signTxBtn.innerText = "✓ Signed";
+
+    } catch (error) {
+        console.error(error);
+        signStatus.innerText = `❌ Signing failed: ${error.message}`;
+        signStatus.style.color = "var(--danger)";
+    }
+}
+
+buildTxBtn.addEventListener('click', buildTransaction);
+signTxBtn.addEventListener('click', signTransaction);
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ADDRESS LOOKUP (via Horizon REST API)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+async function lookupAddress() {
+    const address = document.getElementById('lookup-address').value.trim();
+
+    if (!address || !address.startsWith('G')) {
+        lookupStatus.innerText = "❌ Enter valid Stellar address";
+        lookupStatus.style.color = "var(--danger)";
+        lookupDisplay.style.display = 'none';
         return;
     }
 
-    // Convert USDC amount (7-decimal precision)
-    const amountInStroops = Math.floor(parseFloat(amountUSDC) * 10000000);
+    lookupStatus.innerText = "⏳ Looking up address...";
+    lookupStatus.style.color = "var(--text-muted)";
 
-    const args = [
-        new StellarSdk.Address(userPublicKey).toScVal(),
-        StellarSdk.nativeToScVal(amountInStroops, { type: 'i128' })
-    ];
+    try {
+        // Fetch account info from Horizon
+        const response = await fetch(`${HORIZON_URL}/accounts/${address}`);
+        if (!response.ok) {
+            throw new Error(`Account not found`);
+        }
+        
+        const account = await response.json();
+        const nativeBalance = account.balances.find(b => b.asset_type === 'native');
 
-    const success = await invokeContract('deposit_funds', args, statusText);
-    if (success) {
-        document.getElementById('deposit-amount').value = '';
+        document.getElementById('lookup-account-id').innerText = account.id;
+        document.getElementById('lookup-balance').innerText = nativeBalance ? nativeBalance.balance : "0";
+        document.getElementById('lookup-sequence').innerText = account.sequence;
+
+        lookupDisplay.style.display = 'block';
+        lookupStatus.innerText = "✓ Account found";
+        lookupStatus.style.color = "var(--success)";
+
+    } catch (error) {
+        console.error(error);
+        lookupStatus.innerText = `❌ Not found: ${error.message}`;
+        lookupStatus.style.color = "var(--danger)";
+        lookupDisplay.style.display = 'none';
     }
 }
 
-async function approveAndRelease() {
-    const statusText = document.getElementById('approve-status');
-    const args = [
-        new StellarSdk.Address(userPublicKey).toScVal()
-    ];
-    await invokeContract('approve_release', args, statusText);
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// ADMIN OPERATIONS
-// ═══════════════════════════════════════════════════════════════════════════════
-
-async function adminForceRelease() {
-    const statusText = document.getElementById('admin-status');
-    const args = [
-        new StellarSdk.Address(userPublicKey).toScVal()
-    ];
-    await invokeContract('admin_force_release', args, statusText);
-}
-
-async function adminRefund() {
-    const statusText = document.getElementById('admin-status');
-    const args = [
-        new StellarSdk.Address(userPublicKey).toScVal()
-    ];
-    await invokeContract('admin_refund', args, statusText);
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// EVENT LISTENERS
-// ═══════════════════════════════════════════════════════════════════════════════
-
-depositBtn.addEventListener('click', depositFunds);
-approveBtn.addEventListener('click', approveAndRelease);
-forceReleaseBtn.addEventListener('click', adminForceRelease);
-refundBtn.addEventListener('click', adminRefund);
+lookupBtn.addEventListener('click', lookupAddress);

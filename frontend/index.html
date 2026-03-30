@@ -18,19 +18,23 @@
     <main>
         <!-- Wallet Info -->
         <section class="wallet-section" id="wallet-section">
-            <h2>Wallet Connection</h2>
+            <h2>Wallet / Address Input</h2>
             <div class="card">
-                <p id="wallet-status" class="status-msg">Click "Connect Freighter" above to get started.</p>
+                <p id="wallet-status" class="status-msg">Use Freighter wallet or enter an address manually:</p>
+                <div style="margin-top: 15px;">
+                    <input type="text" id="manual-address" placeholder="Enter Stellar address (G...) or use Freighter" style="margin-bottom: 10px;">
+                    <button id="use-manual-btn" class="action-btn">Use This Address</button>
+                </div>
             </div>
         </section>
 
-        <!-- Test Features (hidden until wallet connected) -->
-        <section class="features-section" id="features-section" style="display: none;">
+        <!-- Test Features -->
+        <section class="features-section" id="features-section">
             <h2>Test Stellar Integration</h2>
             
             <div class="card">
-                <h3>✓ Wallet Connected</h3>
-                <p id="connected-address" style="font-family: monospace; word-break: break-all; color: var(--success);"></p>
+                <h3>✓ Current Address</h3>
+                <p id="connected-address" style="font-family: monospace; word-break: break-all; color: var(--success); min-height: 20px;"></p>
             </div>
 
             <div class="card">
