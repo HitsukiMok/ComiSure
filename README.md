@@ -155,7 +155,7 @@ npm run dev
 
 ## ⚙️ Smart Contract Development
 
-> **📖 Note:** For a comprehensive breakdown of the smart contract's internal logic, data structures, and function signatures, please refer to the `SMART_CONTRACT_API.md`.
+> **📖 Note:** For a comprehensive breakdown of the smart contract's internal logic, data structures, and function signatures, please refer to the [smart contract documentation.](SMART_CONTRACT_API.md).
 
 ### Prerequisites
 
