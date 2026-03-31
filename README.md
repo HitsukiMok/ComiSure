@@ -1,4 +1,4 @@
-<img width="1718" height="811" alt="image" src="https://github.com/user-attachments/assets/e591774b-cb41-45e4-b3ae-d615d78d6385" />
+<img width="1722" height="850" alt="Main index" src="https://github.com/user-attachments/assets/763266e6-7c2d-4ba7-b424-42f31b96baf9" />
 
 
 # 🎨 ComiSure
@@ -11,7 +11,8 @@ ComiSure replaces informal, trust-based payment channels with a decentralized So
   * **Contract Factory ID**: `CAWAKGBTHWFMTB6O74CDJ5WOVLLFZ5WMKTBKOP2FNB5BUMTQPZYQZN3J`
   * **Stellar Expert Factory Log**: [View Deployment Transaction on Testnet](https://stellar.expert/explorer/testnet/tx/50c59d6976fbae99ec5c0727669782b3c5fc5b2a43527b1684093dfde78f7e69)
 
-\<img width="1843" height="725" alt="image" src="[https://github.com/user-attachments/assets/879ea1ec-4480-46d8-99cb-5b53678c8d01](https://github.com/user-attachments/assets/879ea1ec-4480-46d8-99cb-5b53678c8d01)" /\>
+<img width="1849" height="721" alt="image" src="https://github.com/user-attachments/assets/2f2e542b-348c-45ad-890d-d98d030b5f09" />
+
 
 -----
 
