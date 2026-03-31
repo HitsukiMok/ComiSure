@@ -41,7 +41,7 @@ Freelance digital artists and clients in the Philippines face rampant fraud on i
 * **Contract ID**: `CAWAKGBTHWFMTB6O74CDJ5WOVLLFZ5WMKTBKOP2FNB5BUMTQPZYQZN3J`
 * **Stellar Expert**: [View Deployment Transaction on Testnet](https://stellar.expert/explorer/testnet/tx/50c59d6976fbae99ec5c0727669782b3c5fc5b2a43527b1684093dfde78f7e69)
 
-<img width="1788" height="783" alt="image" src="https://github.com/user-attachments/assets/9973433f-8dc4-4dc7-9a0b-17346595b1cc" />
+
 
 
 ---
