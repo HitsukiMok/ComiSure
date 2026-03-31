@@ -1,5 +1,6 @@
 import subprocess
 import os
+import platform
 
 DEPLOYER_ALIAS = "backend_deployer"
 USDC_TOKEN = "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA"
@@ -8,6 +9,14 @@ NETWORK = "testnet"
 # Resolve absolute path to wasm file (now copied locally into the backend repo for cloud deployment)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 WASM_PATH = os.path.join(BASE_DIR, "comi_sure.wasm")
+
+# On Windows, subprocess needs shell=True for PATH resolution.
+# On Linux/Docker, shell=True with a list silently drops all arguments.
+USE_SHELL = platform.system() == "Windows"
+
+def _run(cmd, **kwargs):
+    """Cross-platform subprocess wrapper that handles the shell argument correctly."""
+    return subprocess.run(cmd, capture_output=True, text=True, shell=USE_SHELL, **kwargs)
 
 def setup_cloud_deployer():
     """
@@ -18,20 +27,20 @@ def setup_cloud_deployer():
     if secret:
         print("☁️ Cloud Deployer Secret Key Detected! Provisioning alias securely...")
         # Check if already provisioned
-        existing = subprocess.run(["stellar", "keys", "address", DEPLOYER_ALIAS], capture_output=True)
+        existing = _run(["stellar", "keys", "address", DEPLOYER_ALIAS])
         if existing.returncode != 0:
             subprocess.run(
                 ["stellar", "keys", "add", DEPLOYER_ALIAS],
                 input=secret,
-                text=True
+                text=True,
+                shell=USE_SHELL
             )
             print("✅ Backend Deployer Identity mapped into Cloud CLI instance.")
 
 def get_deployer_address():
-    res = subprocess.run(["stellar", "keys", "address", DEPLOYER_ALIAS], capture_output=True, text=True, shell=True)
+    res = _run(["stellar", "keys", "address", DEPLOYER_ALIAS])
     if res.returncode != 0:
-        # Fallback if shell=True is weird
-        res = subprocess.run(["stellar", "keys", "address", DEPLOYER_ALIAS], capture_output=True, text=True)
+        raise Exception(f"Failed to get deployer address: {res.stderr}")
     return res.stdout.strip()
 
 def deploy_and_initialize_escrow(client_address: str, artist_address: str) -> str:
@@ -48,7 +57,7 @@ def deploy_and_initialize_escrow(client_address: str, artist_address: str) -> st
         "--source", DEPLOYER_ALIAS,
         "--network", NETWORK
     ]
-    deploy_res = subprocess.run(deploy_cmd, capture_output=True, text=True, shell=True)
+    deploy_res = _run(deploy_cmd)
     
     if deploy_res.returncode != 0:
         raise Exception(f"Deployment failed: {deploy_res.stderr} \n {deploy_res.stdout}")
@@ -85,7 +94,7 @@ def deploy_and_initialize_escrow(client_address: str, artist_address: str) -> st
         "--token", USDC_TOKEN
     ]
     
-    init_res = subprocess.run(init_cmd, capture_output=True, text=True, shell=True)
+    init_res = _run(init_cmd)
     if init_res.returncode != 0:
         raise Exception(f"Initialization failed: {init_res.stderr} \n {init_res.stdout}")
 
@@ -105,9 +114,8 @@ def perform_admin_action(contract_id: str, action: str):
         "--", action,
         "--caller", admin_address
     ]
-    res = subprocess.run(cmd, capture_output=True, text=True, shell=True)
+    res = _run(cmd)
     if res.returncode != 0:
         raise Exception(f"Admin action '{action}' failed: {res.stderr}\n{res.stdout}")
     
-    # Just to clear up parsing if void return
     return "success"
