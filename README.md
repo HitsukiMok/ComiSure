@@ -17,7 +17,7 @@ ComiSure replaces informal, trust-based payment channels with a decentralized So
 
 ## 📖 Project Description
 
-Freelance digital artists and their clients (especially within the localized gig economies of the Philippines and SEA) face rampant fraud. Artists suffer severe income loss from malicious PayPal chargebacks after delivering unwatermarked artwork, while clients risk sending upfront e-wallet payments (like GCash) to "artists" who ghost them.
+Freelance digital artists and their clients face rampant fraud. Artists suffer severe income loss from malicious PayPal chargebacks after delivering unwatermarked artwork, while clients risk sending upfront e-wallet payments (like Paypal) to "artists" who ghost them.
 
 **ComiSure** is a decentralized web application that acts as a trustless escrow middleman. Clients initiate a commission by depositing USDC into a custom Soroban smart contract. The funds are securely locked on-chain, proving to the artist that the money is guaranteed. Once the artist delivers the final piece, the client approves the release, and the funds are instantly routed to the artist's wallet. By utilizing the Stellar network, ComiSure leverages 5-second settlement times and sub-cent transaction fees, making smart contract escrows economically viable even for small, everyday art commissions (₱500 - ₱5,000).
 
