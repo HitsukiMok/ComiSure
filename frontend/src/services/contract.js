@@ -9,12 +9,10 @@ import {
 } from '@stellar/stellar-sdk';
 import { StellarWalletsKit } from '@creit-tech/stellar-wallets-kit';
 
-const CONTRACT_ID  = import.meta.env.VITE_CONTRACT_ID;
 const SOROBAN_RPC  = import.meta.env.VITE_SOROBAN_RPC || 'https://soroban-testnet.stellar.org';
 const NETWORK      = Networks.TESTNET;
 
 const server = new rpc.Server(SOROBAN_RPC, { allowHttp: false });
-const contract = new Contract(CONTRACT_ID);
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -100,7 +98,8 @@ async function simulateReadOnly(callerAddress, operation) {
 /**
  * Read the current escrow state: 'Pending' | 'Funded' | 'Released' | 'Refunded'
  */
-export async function getContractState(callerAddress) {
+export async function getContractState(contractId, callerAddress) {
+  const contract = new Contract(contractId);
   const scVal = await simulateReadOnly(callerAddress, contract.call('get_state'));
   if (!scVal) return 'Unknown';
   const raw = scValToNative(scVal);
@@ -110,7 +109,8 @@ export async function getContractState(callerAddress) {
 /**
  * Read the total amount locked in escrow (in USDC stroops — divide by 10_000_000 for USDC).
  */
-export async function getContractAmount(callerAddress) {
+export async function getContractAmount(contractId, callerAddress) {
+  const contract = new Contract(contractId);
   const scVal = await simulateReadOnly(callerAddress, contract.call('get_amount'));
   if (!scVal) return 0n;
   return BigInt(scValToNative(scVal));
@@ -118,10 +118,12 @@ export async function getContractAmount(callerAddress) {
 
 /**
  * Client deposits USDC into escrow.
+ * @param {string} contractId     - Dynamically generated Soroban Contract ID
  * @param {string} callerAddress  - Stellar G... address of the client
  * @param {number} usdcAmount     - USDC amount (e.g. 10 for 10 USDC)
  */
-export async function depositFunds(callerAddress, usdcAmount) {
+export async function depositFunds(contractId, callerAddress, usdcAmount) {
+  const contract = new Contract(contractId);
   const amountStroops = BigInt(Math.round(usdcAmount * 10_000_000));
 
   const op = contract.call(
@@ -136,7 +138,8 @@ export async function depositFunds(callerAddress, usdcAmount) {
 /**
  * Client approves the artwork and releases USDC to the artist.
  */
-export async function approveRelease(callerAddress) {
+export async function approveRelease(contractId, callerAddress) {
+  const contract = new Contract(contractId);
   const op = contract.call(
     'approve_release',
     new Address(callerAddress).toScVal()
@@ -147,7 +150,8 @@ export async function approveRelease(callerAddress) {
 /**
  * Admin refunds the client (artist ghosted).
  */
-export async function adminRefund(adminAddress) {
+export async function adminRefund(contractId, adminAddress) {
+  const contract = new Contract(contractId);
   const op = contract.call(
     'admin_refund',
     new Address(adminAddress).toScVal()
@@ -158,7 +162,8 @@ export async function adminRefund(adminAddress) {
 /**
  * Admin force-releases funds to the artist (client withholding approval).
  */
-export async function adminForceRelease(adminAddress) {
+export async function adminForceRelease(contractId, adminAddress) {
+  const contract = new Contract(contractId);
   const op = contract.call(
     'admin_force_release',
     new Address(adminAddress).toScVal()
