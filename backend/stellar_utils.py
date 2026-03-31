@@ -2,7 +2,6 @@ import subprocess
 import os
 import platform
 
-DEPLOYER_ALIAS = "backend_deployer"
 USDC_TOKEN = "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA"
 NETWORK = "testnet"
 
@@ -18,60 +17,65 @@ def _run(cmd, **kwargs):
     """Cross-platform subprocess wrapper that handles the shell argument correctly."""
     return subprocess.run(cmd, capture_output=True, text=True, shell=USE_SHELL, **kwargs)
 
-def setup_cloud_deployer():
+def _get_source():
     """
-    On cloud providers like Railway, the Stellar CLI won't have the deployer identity pre-saved.
-    This reads the DEPLOYER_SECRET_KEY env variable and provisions it dynamically on boot!
+    Returns the --source value for the Stellar CLI.
+    On cloud (Railway): uses the raw secret key directly (no alias needed).
+    On local (Windows): uses the 'backend_deployer' alias from your local CLI keystore.
     """
     secret = os.getenv("DEPLOYER_SECRET_KEY")
     if secret:
-        print("☁️ Cloud Deployer Secret Key Detected! Provisioning alias securely...")
-        # Check if already provisioned
-        existing = _run(["stellar", "keys", "address", DEPLOYER_ALIAS])
-        if existing.returncode != 0:
-            # --secret-key flag tells the CLI to read a secret key from stdin
-            result = subprocess.run(
-                ["stellar", "keys", "add", DEPLOYER_ALIAS, "--secret-key"],
-                input=secret.strip() + "\n",
-                text=True,
-                shell=USE_SHELL,
-                capture_output=True
-            )
-            if result.returncode != 0:
-                print(f"⚠️ Key add failed: {result.stderr} {result.stdout}")
-                # Fallback: try without the flag (older CLI versions)
-                subprocess.run(
-                    ["stellar", "keys", "add", DEPLOYER_ALIAS],
-                    input=secret.strip() + "\n",
-                    text=True,
-                    shell=USE_SHELL,
-                    capture_output=True
-                )
-            # Verify it actually worked
-            verify = _run(["stellar", "keys", "address", DEPLOYER_ALIAS])
-            if verify.returncode == 0:
-                print(f"✅ Backend Deployer provisioned: {verify.stdout.strip()}")
-            else:
-                print(f"❌ Deployer provisioning FAILED: {verify.stderr}")
+        return secret.strip()
+    return "backend_deployer"
 
 def get_deployer_address():
-    res = _run(["stellar", "keys", "address", DEPLOYER_ALIAS])
-    if res.returncode != 0:
-        raise Exception(f"Failed to get deployer address: {res.stderr}")
-    return res.stdout.strip()
+    """Derives the public G... address from either the env secret key or the local alias."""
+    secret = os.getenv("DEPLOYER_SECRET_KEY")
+    if secret:
+        # On cloud: derive address by calling `stellar keys address` won't work without alias,
+        # so we use the stellar CLI's built-in key parsing via a dummy invoke
+        # Actually, we can use `stellar keys generate --no-fund` then override, but simplest:
+        # Use stellar-sdk python lib if available, otherwise parse from CLI
+        try:
+            from stellar_sdk import Keypair
+            kp = Keypair.from_secret(secret.strip())
+            return kp.public_key
+        except ImportError:
+            # Fallback: ask the CLI to show the address from the raw key
+            # The CLI can parse it from a transaction source
+            raise Exception("stellar-sdk Python package is required for cloud deployment. Add it to requirements.txt.")
+    else:
+        # On local: use the saved alias
+        res = _run(["stellar", "keys", "address", "backend_deployer"])
+        if res.returncode != 0:
+            raise Exception(f"Failed to get deployer address: {res.stderr}")
+        return res.stdout.strip()
+
+def setup_cloud_deployer():
+    """Validates that the cloud deployer can be resolved on startup."""
+    secret = os.getenv("DEPLOYER_SECRET_KEY")
+    if secret:
+        try:
+            addr = get_deployer_address()
+            print(f"☁️ Cloud Deployer ready! Public address: {addr}")
+        except Exception as e:
+            print(f"❌ Cloud Deployer setup failed: {e}")
+    else:
+        print("🏠 Running locally — using 'backend_deployer' alias from your CLI keystore.")
 
 def deploy_and_initialize_escrow(client_address: str, artist_address: str) -> str:
     """
     Deploys a new instance of the ComiSure escrow contract on the testnet
     and initializes it with the given participants.
     """
+    source = _get_source()
     print(f"Deploying new contract for Client: {client_address} & Artist: {artist_address} ...")
     
     # 1. Deploy the contract
     deploy_cmd = [
         "stellar", "contract", "deploy",
         "--wasm", WASM_PATH,
-        "--source", DEPLOYER_ALIAS,
+        "--source", source,
         "--network", NETWORK
     ]
     deploy_res = _run(deploy_cmd)
@@ -83,7 +87,6 @@ def deploy_and_initialize_escrow(client_address: str, artist_address: str) -> st
     
     # Verify we actually got a real contract ID (56 chars, starts with 'C')
     if not contract_id.startswith("C") or len(contract_id) != 56:
-        # Sometimes the CLI writes non-ID log messages to stdout, we might need to parse it
         lines = contract_id.splitlines()
         for line in lines:
             if line.startswith("C") and len(line) == 56:
@@ -102,7 +105,7 @@ def deploy_and_initialize_escrow(client_address: str, artist_address: str) -> st
     init_cmd = [
         "stellar", "contract", "invoke",
         "--id", contract_id,
-        "--source", DEPLOYER_ALIAS,
+        "--source", source,
         "--network", NETWORK,
         "--", "initialize",
         "--client", client_address,
@@ -122,11 +125,12 @@ def perform_admin_action(contract_id: str, action: str):
     """
     Executes 'admin_refund' or 'admin_force_release' on-chain using the backend_deployer identity.
     """
+    source = _get_source()
     admin_address = get_deployer_address()
     cmd = [
         "stellar", "contract", "invoke",
         "--id", contract_id,
-        "--source", DEPLOYER_ALIAS,
+        "--source", source,
         "--network", NETWORK,
         "--", action,
         "--caller", admin_address
