@@ -5,7 +5,7 @@
 ComiSure replaces informal, trust-based payment channels with a decentralized Soroban smart contract. Protect yourself from chargeback scams and ghost artists using instant, on-chain settlements.
 
 
-**P.S**: The deployed site/front-end is for prototype purposes only. Though ComiSure Prototype managed to utilize Stellarwallet kit working that supports alot of wallets.
+**P.S**: The deployed site/front-end is for prototype purposes only. Though ComiSure Prototype managed to utilize Stellarwallet kit working that supports alot of wallets. The API however, for the smart contracts does work. Feel free to try it in CLI
 
 ---
 
