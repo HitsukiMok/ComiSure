@@ -4,6 +4,8 @@
 
 ComiSure replaces informal, trust-based payment channels with a decentralized Soroban smart contract. Protect yourself from chargeback scams and ghost artists using instant, on-chain settlements.
 
+> **Note**: The deployed front-end is currently for prototype design purposes, utilizing the `StellarWalletsKit` to seamlessly support various wallets on the network. The Soroban smart contract API underneath is fully functional! Feel free to interact with it via the CLI or the local dashboard.
+
 ---
 
 ## 🏗️ Platform Architecture
@@ -36,8 +38,11 @@ Freelance digital artists and clients in the Philippines face rampant fraud on i
 ## 🏆 For Certification Pre-Requisites
 
 * **GitHub Repo**: [HitsukiMok/ComiSure](https://github.com/HitsukiMok/ComiSure)
-* **Contract ID**: `c4aa3cf23d50a42bab6c3c3797a88e238a965b589162341a7bb0135153c2915b`
-* **Stellar Expert**: [View Transaction on Testnet](https://stellar.expert/explorer/testnet/tx/d63ac48098d54a206deacd7fd6018a06e5ee5a2781694beb7510ad0cd307a8cc)
+* **Contract ID**: `CAWAKGBTHWFMTB6O74CDJ5WOVLLFZ5WMKTBKOP2FNB5BUMTQPZYQZN3J`
+* **Stellar Expert**: [View Deployment Transaction on Testnet](https://stellar.expert/explorer/testnet/tx/50c59d6976fbae99ec5c0727669782b3c5fc5b2a43527b1684093dfde78f7e69)
+
+<img width="1788" height="783" alt="image" src="https://github.com/user-attachments/assets/9973433f-8dc4-4dc7-9a0b-17346595b1cc" />
+
 
 ---
 
@@ -110,18 +115,7 @@ ComiSure/
 ```
 
 ---
-### For Certification Pre-Requisites
-**GitHub Repo**: https://github.com/HitsukiMok/ComiSure
 
-
-**Contract ID**: c4aa3cf23d50a42bab6c3c3797a88e238a965b589162341a7bb0135153c2915b
-
-
-**Stellar Expert**: https://stellar.expert/explorer/testnet/tx/d63ac48098d54a206deacd7fd6018a06e5ee5a2781694beb7510ad0cd307a8cc
-
-
-P.S: The Frontend of this branch is still not ready yet, as of updating this readme 🙂‍↕️
----
 
 ## License
 

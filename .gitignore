@@ -1,4 +1,15 @@
+# ─── Rust / Soroban ──────────────────────────────────────────────────
 /target/
 /Cargo.lock
 
-
+# ─── Environment Variables (NEVER commit these) ──────────────────────
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.test
+frontend/.env
+frontend/.env.*
+backend/.env
+backend/.env.*
