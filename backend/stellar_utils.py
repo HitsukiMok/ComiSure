@@ -29,13 +29,30 @@ def setup_cloud_deployer():
         # Check if already provisioned
         existing = _run(["stellar", "keys", "address", DEPLOYER_ALIAS])
         if existing.returncode != 0:
-            subprocess.run(
-                ["stellar", "keys", "add", DEPLOYER_ALIAS],
-                input=secret,
+            # --secret-key flag tells the CLI to read a secret key from stdin
+            result = subprocess.run(
+                ["stellar", "keys", "add", DEPLOYER_ALIAS, "--secret-key"],
+                input=secret.strip() + "\n",
                 text=True,
-                shell=USE_SHELL
+                shell=USE_SHELL,
+                capture_output=True
             )
-            print("✅ Backend Deployer Identity mapped into Cloud CLI instance.")
+            if result.returncode != 0:
+                print(f"⚠️ Key add failed: {result.stderr} {result.stdout}")
+                # Fallback: try without the flag (older CLI versions)
+                subprocess.run(
+                    ["stellar", "keys", "add", DEPLOYER_ALIAS],
+                    input=secret.strip() + "\n",
+                    text=True,
+                    shell=USE_SHELL,
+                    capture_output=True
+                )
+            # Verify it actually worked
+            verify = _run(["stellar", "keys", "address", DEPLOYER_ALIAS])
+            if verify.returncode == 0:
+                print(f"✅ Backend Deployer provisioned: {verify.stdout.strip()}")
+            else:
+                print(f"❌ Deployer provisioning FAILED: {verify.stderr}")
 
 def get_deployer_address():
     res = _run(["stellar", "keys", "address", DEPLOYER_ALIAS])
