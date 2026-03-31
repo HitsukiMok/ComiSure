@@ -11,6 +11,8 @@ export const commissionService = {
   getAll: (filters) => api.get('/commissions/', { params: filters }).then(res => res.data),
   getById: (id) => api.get(`/commissions/${id}`).then(res => res.data),
   update: (id, data) => api.patch(`/commissions/${id}`, data).then(res => res.data),
+  adminRefund: (id) => api.post(`/commissions/${id}/admin_refund`).then(res => res.data),
+  adminForceRelease: (id) => api.post(`/commissions/${id}/admin_force_release`).then(res => res.data),
 };
 
 export const disputeService = {

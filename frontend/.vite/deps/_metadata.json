@@ -1,0 +1,82 @@
+{
+  "hash": "7f335093",
+  "configHash": "c2ec0303",
+  "lockfileHash": "0b547c23",
+  "browserHash": "9e67ac72",
+  "optimized": {
+    "@creit-tech/stellar-wallets-kit": {
+      "src": "../../node_modules/@creit-tech/stellar-wallets-kit/mod.js",
+      "file": "@creit-tech_stellar-wallets-kit.js",
+      "fileHash": "dfaf7841",
+      "needsInterop": false
+    },
+    "@creit-tech/stellar-wallets-kit/modules/utils": {
+      "src": "../../node_modules/@creit-tech/stellar-wallets-kit/sdk/modules/utils.js",
+      "file": "@creit-tech_stellar-wallets-kit_modules_utils.js",
+      "fileHash": "9bed24bc",
+      "needsInterop": false
+    },
+    "@stellar/stellar-sdk": {
+      "src": "../../node_modules/@stellar/stellar-sdk/dist/stellar-sdk.min.js",
+      "file": "@stellar_stellar-sdk.js",
+      "fileHash": "b9c9daa6",
+      "needsInterop": true
+    },
+    "axios": {
+      "src": "../../node_modules/axios/index.js",
+      "file": "axios.js",
+      "fileHash": "465f8b3c",
+      "needsInterop": false
+    },
+    "framer-motion": {
+      "src": "../../node_modules/framer-motion/dist/es/index.mjs",
+      "file": "framer-motion.js",
+      "fileHash": "5146d7f8",
+      "needsInterop": false
+    },
+    "lucide-react": {
+      "src": "../../node_modules/lucide-react/dist/esm/lucide-react.js",
+      "file": "lucide-react.js",
+      "fileHash": "209bad82",
+      "needsInterop": false
+    },
+    "react-dom/client": {
+      "src": "../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "723c7c4c",
+      "needsInterop": true
+    },
+    "react-router-dom": {
+      "src": "../../node_modules/react-router-dom/dist/index.mjs",
+      "file": "react-router-dom.js",
+      "fileHash": "7ae135e6",
+      "needsInterop": false
+    },
+    "react": {
+      "src": "../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "40045f80",
+      "needsInterop": true
+    },
+    "react/jsx-dev-runtime": {
+      "src": "../../node_modules/react/jsx-dev-runtime.js",
+      "file": "react_jsx-dev-runtime.js",
+      "fileHash": "f2e8407d",
+      "needsInterop": true
+    }
+  },
+  "chunks": {
+    "chunk-YKewjYmz": {
+      "file": "chunk-YKewjYmz.js",
+      "isDynamicEntry": false
+    },
+    "react-dom-BmXe90oj": {
+      "file": "react-dom-BmXe90oj.js",
+      "isDynamicEntry": false
+    },
+    "utils-Db3O7fom": {
+      "file": "utils-Db3O7fom.js",
+      "isDynamicEntry": false
+    }
+  }
+}

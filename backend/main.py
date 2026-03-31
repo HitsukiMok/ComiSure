@@ -7,6 +7,7 @@ from models import (
     Commission, CommissionCreate, CommissionRead, CommissionUpdate,
     Dispute, DisputeCreate, DisputeRead
 )
+import stellar_utils
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="ComiSure API", description="Off-chain API for tracking Stellar Commissions")
@@ -23,6 +24,8 @@ app.add_middleware(
 @app.on_event("startup")
 def on_startup():
     create_db_and_tables()
+    # Provision the cloud deployer key on startup if it exists!
+    stellar_utils.setup_cloud_deployer()
 
 @app.get("/")
 def read_root():
@@ -31,6 +34,17 @@ def read_root():
 @app.post("/commissions/", response_model=CommissionRead)
 def create_commission(commission: CommissionCreate, session: Session = Depends(get_session)):
     db_commission = Commission.model_validate(commission)
+    
+    # Trigger smart contract deployment (blocks for ~10 seconds)
+    try:
+        contract_id = stellar_utils.deploy_and_initialize_escrow(
+            client_address=db_commission.client_address,
+            artist_address=db_commission.artist_address
+        )
+        db_commission.contract_id = contract_id
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+        
     session.add(db_commission)
     session.commit()
     session.refresh(db_commission)
@@ -113,3 +127,33 @@ def resolve_dispute(dispute_id: int, resolution: str, session: Session = Depends
         
     session.commit()
     return {"status": "success", "dispute_status": db_dispute.status}
+
+@app.post("/commissions/{commission_id}/admin_refund")
+def admin_refund(commission_id: int, session: Session = Depends(get_session)):
+    db_commission = session.get(Commission, commission_id)
+    if not db_commission or not db_commission.contract_id:
+        raise HTTPException(status_code=404, detail="Valid commission contract not found")
+        
+    try:
+        stellar_utils.perform_admin_action(db_commission.contract_id, "admin_refund")
+        db_commission.status = "Refunded"
+        session.add(db_commission)
+        session.commit()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    return {"status": "success"}
+
+@app.post("/commissions/{commission_id}/admin_force_release")
+def admin_force_release(commission_id: int, session: Session = Depends(get_session)):
+    db_commission = session.get(Commission, commission_id)
+    if not db_commission or not db_commission.contract_id:
+        raise HTTPException(status_code=404, detail="Valid commission contract not found")
+        
+    try:
+        stellar_utils.perform_admin_action(db_commission.contract_id, "admin_force_release")
+        db_commission.status = "Released"
+        session.add(db_commission)
+        session.commit()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    return {"status": "success"}
