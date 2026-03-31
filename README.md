@@ -42,6 +42,7 @@ Freelance digital artists and clients in the Philippines face rampant fraud on i
 * **Stellar Expert**: [View Deployment Transaction on Testnet](https://stellar.expert/explorer/testnet/tx/50c59d6976fbae99ec5c0727669782b3c5fc5b2a43527b1684093dfde78f7e69)
 
 
+<img width="1843" height="725" alt="image" src="https://github.com/user-attachments/assets/879ea1ec-4480-46d8-99cb-5b53678c8d01" />
 
 
 ---
