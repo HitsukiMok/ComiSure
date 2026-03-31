@@ -39,8 +39,12 @@ Freelance digital artists and clients in the Philippines face rampant fraud on i
 ## 🏆 For Certification Pre-Requisites
 
 * **GitHub Repo**: [HitsukiMok/ComiSure](https://github.com/HitsukiMok/ComiSure)
-* **Contract ID**: `c4aa3cf23d50a42bab6c3c3797a88e238a965b589162341a7bb0135153c2915b`
+* **Contract ID**: `CAQS2G2MMFUZUOEFZE2ABDRQ4A7DHTQLE4EVAU6WCGPGPLZQPX7PNLYJ`
 * **Stellar Expert**: [View Transaction on Testnet](https://stellar.expert/explorer/testnet/tx/d63ac48098d54a206deacd7fd6018a06e5ee5a2781694beb7510ad0cd307a8cc)
+
+
+  <img width="1785" height="616" alt="image" src="https://github.com/user-attachments/assets/9aedb3fb-122d-48a4-a0e0-4c52322d381a" />
+
 
 ---
 
