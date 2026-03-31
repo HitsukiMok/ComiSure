@@ -1,4 +1,7 @@
-<img width="1718" height="811" alt="image" src="https://github.com/user-attachments/assets/e591774b-cb41-45e4-b3ae-d615d78d6385" /># 🎨 ComiSure
+<img width="1718" height="811" alt="image" src="https://github.com/user-attachments/assets/e591774b-cb41-45e4-b3ae-d615d78d6385" />
+
+
+# 🎨 ComiSure
 
 **Trustless USDC escrow for freelance digital art commissions on the Stellar Network.**
 
