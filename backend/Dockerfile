@@ -1,7 +1,7 @@
 FROM python:3.11-slim
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y curl tar build-essential && rm -rf /var/lib/apt/lists/*
+# Install system dependencies (libdbus-1-3 is required by Stellar CLI v25+)
+RUN apt-get update && apt-get install -y curl tar build-essential libdbus-1-3 && rm -rf /var/lib/apt/lists/*
 
 # Install Stellar CLI v25.2.0 (must match the testnet protocol version)
 RUN curl -sSL https://github.com/stellar/stellar-cli/releases/download/v25.2.0/stellar-cli-25.2.0-x86_64-unknown-linux-gnu.tar.gz -o stellar-cli.tar.gz \
