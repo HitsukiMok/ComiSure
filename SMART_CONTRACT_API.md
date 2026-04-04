@@ -809,20 +809,6 @@ The token contract may also revert with errors such as:
 | 1,000.00 | 10_000_000_000 | Professional illustration |
 | 9,223,372,036.85 | 9223372036854775807 | Maximum i128 value |
 
----
-
-## Contract Deployment Checklist
-
-- [ ] Admin wallet is funded with testnet XLM (for gas)
-- [ ] All three participant addresses (client, artist, admin) are created and funded
-- [ ] USDC token contract ID is known (Circle's SAC on Stellar Testnet)
-- [ ] Client wallet has USDC balance ≥ intended commission amount
-- [ ] Artist wallet has a trustline to the USDC token
-- [ ] Contract binary is compiled (`cargo build --target wasm32-unknown-unknown --release`)
-- [ ] Contract is deployed via `stellar contract deploy ...`
-- [ ] `initialize()` is called with all participant addresses
-- [ ] Frontend is pointed to the correct contract ID
-- [ ] Test a full flow (deposit → approve/refund/force-release) before production
 
 ---
 
@@ -834,6 +820,3 @@ The token contract may also revert with errors such as:
 - **Soroban RPC API:** https://developers.stellar.org/docs/reference/soroban-rpc
 
 ---
-
-**Document Last Updated:** 2026-03-30  
-**Status:** Ready for Frontend Integration
