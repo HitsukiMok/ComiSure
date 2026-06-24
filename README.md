@@ -179,9 +179,9 @@ ComiSure/
 ├── frontend/           # React + Vite application & Wallet SDK integration
 ├── backend/            # Python FastAPI dynamic deployer & SQLite tracker
 ├── Cargo.toml          # Soroban package dependencies
-└── src/
-    ├── lib.rs          # Soroban Escrow Smart Contract code
-    └── test.rs         # Local testings for happy path & unauthorized calls
+└── contract/
+  ├── lib.rs          # Soroban Escrow Smart Contract code
+  └── test.rs         # Local testings for happy path & unauthorized calls
 ```
 
 -----
