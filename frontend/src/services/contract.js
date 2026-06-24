@@ -14,6 +14,63 @@ const NETWORK      = Networks.TESTNET;
 
 const server = new rpc.Server(SOROBAN_RPC, { allowHttp: false });
 
+function extractErrorText(error) {
+  if (!error) return 'Unknown contract error.';
+
+  if (typeof error === 'string') return error;
+
+  if (typeof error === 'object') {
+    try {
+      return JSON.stringify(error);
+    } catch {
+      return String(error);
+    }
+  }
+
+  if (error.response?.data?.detail) return String(error.response.data.detail);
+  if (error.message) return String(error.message);
+  if (error.resultXdr) return String(error.resultXdr);
+  return String(error);
+}
+
+function friendlyContractError(error, context = {}) {
+  const raw = extractErrorText(error);
+  const lower = raw.toLowerCase();
+
+  if (lower.includes('trustline entry is missing for account')) {
+    const actor = context.actorLabel || 'This wallet';
+    const target = context.operation === 'approve_release'
+      ? 'the artist wallet'
+      : context.operation === 'deposit_funds'
+        ? 'the client wallet'
+        : 'the target wallet';
+    return `${actor} does not have a USDC trustline. The failing account is likely ${target}. Open that wallet and add/enable a USDC trustline, then try again.`;
+  }
+
+  if (lower.includes('insufficient balance')) {
+    const actor = context.actorLabel || 'the wallet';
+    return `${actor} does not have enough USDC balance for this action.`;
+  }
+
+  if (lower.includes('only the client can approve')) {
+    return 'Only the registered client wallet can approve the release.';
+  }
+
+  if (lower.includes('only the registered client can deposit')) {
+    return 'Only the registered client wallet can deposit funds.';
+  }
+
+  if (lower.includes('only the admin can')) {
+    return 'Only the admin wallet can perform this action.';
+  }
+
+  if (lower.includes('hosterror') || lower.includes('error(contract')) {
+    return `On-chain contract error: ${raw}`;
+  }
+
+  return raw;
+}
+
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 /** Poll until transaction is confirmed or failed. Returns the result. */
@@ -29,7 +86,7 @@ async function waitForTransaction(hash, maxAttempts = 30) {
 }
 
 /** Build, simulate, sign, submit and wait for a contract call. */
-async function invokeContract(callerAddress, operation) {
+async function invokeContract(callerAddress, operation, context = {}) {
   // 1. Load the caller's on-chain account (gets sequence number)
   const account = await server.getAccount(callerAddress);
 
@@ -57,14 +114,14 @@ async function invokeContract(callerAddress, operation) {
   );
 
   if (submitResult.status === 'ERROR') {
-    throw new Error(`Submission failed: ${JSON.stringify(submitResult.errorResult)}`);
+    throw new Error(friendlyContractError(submitResult.errorResult, context));
   }
 
   // 6. Poll for the final result
   const confirmed = await waitForTransaction(submitResult.hash);
 
   if (confirmed.status === rpc.Api.GetTransactionStatus.FAILED) {
-    throw new Error(`Transaction failed on-chain: ${confirmed.resultXdr}`);
+    throw new Error(friendlyContractError(confirmed.resultXdr, context));
   }
 
   return {
@@ -87,7 +144,7 @@ async function simulateReadOnly(callerAddress, operation) {
 
   const sim = await server.simulateTransaction(tx);
   if (rpc.Api.isSimulationError(sim)) {
-    throw new Error(`Simulation error: ${sim.error}`);
+    throw new Error(friendlyContractError(sim.error, context));
   }
   // Extract the return value
   return sim.result?.retval;
@@ -132,7 +189,10 @@ export async function depositFunds(contractId, callerAddress, usdcAmount) {
     nativeToScVal(amountStroops, { type: 'i128' })
   );
 
-  return invokeContract(callerAddress, op);
+  return invokeContract(callerAddress, op, {
+    actorLabel: 'The client wallet',
+    operation: 'deposit_funds',
+  });
 }
 
 /**
@@ -144,7 +204,10 @@ export async function approveRelease(contractId, callerAddress) {
     'approve_release',
     new Address(callerAddress).toScVal()
   );
-  return invokeContract(callerAddress, op);
+  return invokeContract(callerAddress, op, {
+    actorLabel: 'The connected wallet',
+    operation: 'approve_release',
+  });
 }
 
 /**
@@ -156,7 +219,10 @@ export async function adminRefund(contractId, adminAddress) {
     'admin_refund',
     new Address(adminAddress).toScVal()
   );
-  return invokeContract(adminAddress, op);
+  return invokeContract(adminAddress, op, {
+    actorLabel: 'The admin wallet',
+    operation: 'admin_refund',
+  });
 }
 
 /**
@@ -168,5 +234,10 @@ export async function adminForceRelease(contractId, adminAddress) {
     'admin_force_release',
     new Address(adminAddress).toScVal()
   );
-  return invokeContract(adminAddress, op);
+  return invokeContract(adminAddress, op, {
+    actorLabel: 'The admin wallet',
+    operation: 'admin_force_release',
+  });
 }
+
+export { friendlyContractError };
