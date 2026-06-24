@@ -11,6 +11,7 @@ repository  = "https://github.com/HitsukiMok/ComiSure"
 [lib]
 name       = "comi_sure"
 crate-type = ["cdylib", "rlib"]
+path       = "contract/lib.rs"
  
 # ── Runtime dependencies ──────────────────────────────────────────────────────
 [dependencies]
