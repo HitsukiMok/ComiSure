@@ -4,3 +4,4 @@ sqlmodel>=0.0.37
 pydantic>=2.7.0
 python-dotenv>=1.0.0
 stellar-sdk>=9.0.0
+psycopg2-binary>=2.9.9
