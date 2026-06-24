@@ -121,7 +121,7 @@ The strict requirement for the **Stellar CLI** and persistent database connectio
 **Required Railway Environment Variables:**
 
   - `DATABASE_URL`: Let Railway auto-provision a PostgreSQL database, or leave blank to fall back to a volatile SQLite file.
-  - `DEPLOYER_SECRET_KEY`: `S...` The Secret Key that funds gas fees for dynamically spinning up Escrows. This will be automatically injected into the Railway environment on boot\!
+  - `DEPLOYER_SECRET_KEY`: Your deployer identity for signing contract deploys. This can be either a raw Stellar secret seed (`S...`) or a 24-word Stellar seed phrase, depending on how the identity was generated.
 
 -----
 

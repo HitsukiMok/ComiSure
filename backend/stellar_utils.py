@@ -13,6 +13,12 @@ WASM_PATH = os.path.join(BASE_DIR, "comi_sure.wasm")
 # On Linux/Docker, shell=True with a list silently drops all arguments.
 USE_SHELL = platform.system() == "Windows"
 
+
+def _is_seed_phrase(value: str) -> bool:
+    """Return True when the value looks like a Stellar mnemonic seed phrase."""
+    words = value.strip().split()
+    return len(words) >= 12
+
 def _run(cmd, **kwargs):
     """Cross-platform subprocess wrapper that handles the shell argument correctly."""
     return subprocess.run(cmd, capture_output=True, text=True, shell=USE_SHELL, **kwargs)
@@ -29,21 +35,24 @@ def _get_source():
     return "backend_deployer"
 
 def get_deployer_address():
-    """Derives the public G... address from either the env secret key or the local alias."""
+    """Derives the public G... address from either the env seed/secret or the local alias."""
     secret = os.getenv("DEPLOYER_SECRET_KEY")
     if secret:
-        # On cloud: derive address by calling `stellar keys address` won't work without alias,
-        # so we use the stellar CLI's built-in key parsing via a dummy invoke
-        # Actually, we can use `stellar keys generate --no-fund` then override, but simplest:
-        # Use stellar-sdk python lib if available, otherwise parse from CLI
+        value = secret.strip()
+        if _is_seed_phrase(value):
+            # Stellar CLI can resolve a seed phrase directly and knows which HD path to use.
+            res = _run(["stellar", "keys", "public-key", "--hd-path", "0", value])
+            if res.returncode != 0:
+                raise Exception(f"Failed to derive deployer address from seed phrase: {res.stderr}")
+            return res.stdout.strip()
+
+        # Raw Ed25519 secret seed path (S...).
         try:
             from stellar_sdk import Keypair
-            kp = Keypair.from_secret(secret.strip())
+            kp = Keypair.from_secret(value)
             return kp.public_key
-        except ImportError:
-            # Fallback: ask the CLI to show the address from the raw key
-            # The CLI can parse it from a transaction source
-            raise Exception("stellar-sdk Python package is required for cloud deployment. Add it to requirements.txt.")
+        except Exception as exc:
+            raise Exception(f"Failed to derive deployer address from secret key: {exc}")
     else:
         # On local: use the saved alias
         res = _run(["stellar", "keys", "address", "backend_deployer"])
