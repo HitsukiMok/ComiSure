@@ -6,6 +6,7 @@ import {
   getContractAmount,
   depositFunds,
   approveRelease,
+  friendlyContractError,
 } from '../services/contract';
 import { commissionService } from '../services/api';
 import { ShieldCheck, Clock, CheckCircle2, XCircle, Loader2, ExternalLink, RefreshCw, Plus, ArrowLeft } from 'lucide-react';
@@ -227,7 +228,7 @@ function CreateCommissionView({ address, onCancel, onSuccess }) {
       const newCommission = await commissionService.create(payload);
       onSuccess(newCommission);
     } catch (e) {
-      alert("Failed to create and deploy contract: " + (e.response?.data?.detail || e.message));
+      alert("Failed to create and deploy contract: " + friendlyContractError(e, { actorLabel: 'The backend deployer' }));
     } finally {
       setLoading(false);
     }
@@ -313,7 +314,7 @@ function ActiveEscrowView({ commission, walletAddress }) {
       await fetchState();
     } catch (e) {
       console.error(e);
-      setToast({ type: 'error', message: e.message || String(e) });
+      setToast({ type: 'error', message: friendlyContractError(e, { actorLabel: 'The connected wallet' }) });
     } finally {
       setLoading(false);
     }
@@ -328,7 +329,7 @@ function ActiveEscrowView({ commission, walletAddress }) {
       await fetchState();
     } catch (e) {
       console.error(e);
-      setToast({ type: 'error', message: e.response?.data?.detail || e.message || String(e) });
+      setToast({ type: 'error', message: friendlyContractError(e, { actorLabel: 'The backend service' }) });
     } finally {
       setLoading(false);
     }
