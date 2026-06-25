@@ -7,18 +7,42 @@
 
 ComiSure replaces informal, trust-based payment channels with a decentralized Soroban smart contract. Protect yourself from chargeback scams and ghost artists using instant, on-chain settlements.
 
-  * **GitHub Repo**: [HitsukiMok/ComiSure](https://github.com/HitsukiMok/ComiSure)
-  * **Contract Factory ID**: `CAWAKGBTHWFMTB6O74CDJ5WOVLLFZ5WMKTBKOP2FNB5BUMTQPZYQZN3J`
-  * **Stellar Expert Factory Log**: [View Deployment Transaction on Testnet](https://stellar.expert/explorer/testnet/tx/50c59d6976fbae99ec5c0727669782b3c5fc5b2a43527b1684093dfde78f7e69)
+* **GitHub Repo**: [HitsukiMok/ComiSure](https://github.com/HitsukiMok/ComiSure)
+* **Contract Factory ID**: `CAWAKGBTHWFMTB6O74CDJ5WOVLLFZ5WMKTBKOP2FNB5BUMTQPZYQZN3J`
+* **Stellar Expert Factory Log**: [View Deployment Transaction on Testnet](https://stellar.expert/explorer/testnet/tx/50c59d6976fbae99ec5c0727669782b3c5fc5b2a43527b1684093dfde78f7e69)
 
 <img width="1849" height="721" alt="image" src="https://github.com/user-attachments/assets/2f2e542b-348c-45ad-890d-d98d030b5f09" />
 
+---
 
------
+## 📌 Navigation
+* [📺 Project Demo Video](#-project-demo-video)
+* [📖 Project Description](#-project-description)
+* [✨ Core Features](#-core-features)
+* [🔗 Deployed Contract Details](#-deployed-contract-details)
+* [🖥️ UI / Screenshots](#️-ui--screenshots)
+* [🚀 True Dynamic Pipeline Structure](#-true-dynamic-pipeline-structure)
+* [🛠 Tech Stack](#-tech-stack)
+* [☁️ Deployment Architecture (Vercel + Render)](#️-deployment-architecture-vercel--render)
+* [🏃 Local Development Quickstart](#-local-development-quickstart)
+* [🔒 Security Hardening, Auth, & Rate Limiting](#-security-hardening-auth--rate-limiting) <-New Feature!
+* [⚙️ Smart Contract Development](#️-smart-contract-development) 
+* [📂 Project Structure](#-project-structure)
+
+---
+
+## 📺 Project Demo Video
+
+[![ComiSure Project Demo](https://img.shields.io/badge/YouTube-Demo%20Video-red?style=for-the-badge&logo=youtube)](https://youtu.be/71GF2m4M4fo)
+
+Click the badge above or navigate to the following link to view our live system walkthrough and features demonstration:
+👉 **[Watch the ComiSure Demo Video on YouTube](https://youtu.be/71GF2m4M4fo)**
+
+---
 
 ## 📖 Project Description
 
-Freelance digital artists and their clients face rampant fraud. Artists suffer severe income loss from malicious PayPal chargebacks after delivering unwatermarked artwork, while clients risk sending upfront e-wallet payments (like Paypal) to "artists" who ghost them.
+Freelance digital artists and their clients face rampant fraud. Artists suffer severe income loss from malicious PayPal chargebacks after delivering unwatermarked artwork, while clients risk sending upfront e-wallet payments (like PayPal) to "artists" who ghost them.
 
 **ComiSure** is a decentralized web application that acts as a trustless escrow middleman. Clients initiate a commission by depositing USDC into a custom Soroban smart contract. The funds are securely locked on-chain, proving to the artist that the money is guaranteed. Once the artist delivers the final piece, the client approves the release, and the funds are instantly routed to the artist's wallet. By utilizing the Stellar network, ComiSure leverages 5-second settlement times and sub-cent transaction fees, making smart contract escrows economically viable even for small, everyday art commissions (₱500 - ₱5,000).
 
@@ -26,20 +50,20 @@ Freelance digital artists and their clients face rampant fraud. Artists suffer s
 
 ## ✨ Core Features
 
-  * **Trustless USDC Escrow:** Lock commission funds upfront in a stablecoin, protecting both parties from crypto volatility and payment fraud.
-  * **Client-Driven Approval:** Funds are only released to the artist when the client reviews and approves the final delivered artwork.
-  * **Admin Dispute Resolution:** A built-in fallback mechanism. If a client maliciously withholds approval after delivery, or if an artist fails to deliver, the platform Admin can step in to force-release or refund the USDC.
-  * **Dynamic Contract Generation:** Every single commission gets its own physically isolated Soroban smart contract generated on the fly, preventing centralized contract bottlenecks.
-  * **Micro-transaction Optimized:** Powered by Stellar, ensuring gas fees do not eat into the artist's hard-earned commission profits.
+* **Trustless USDC Escrow:** Lock commission funds upfront in a stablecoin, protecting both parties from crypto volatility and payment fraud.
+* **Client-Driven Approval:** Funds are only released to the artist when the client reviews and approves the final delivered artwork.
+* **Admin Dispute Resolution:** A built-in fallback mechanism. If a client maliciously withholds approval after delivery, or if an artist fails to deliver, the platform Admin can step in to force-release or refund the USDC.
+* **Dynamic Contract Generation:** Every single commission gets its own physically isolated Soroban smart contract generated on the fly, preventing centralized contract bottlenecks.
+* **Micro-transaction Optimized:** Powered by Stellar, ensuring gas fees do not eat into the artist's hard-earned commission profits.
 
 -----
 
 ## 🔗 Deployed Contract Details
 
-  * **Network:** Stellar Testnet
-  * **Smart Contract Environment:** Soroban
-  * **Deployed Factory Contract ID:** `CAWAKGBTHWFMTB6O74CDJ5WOVLLFZ5WMKTBKOP2FNB5BUMTQPZYQZN3J`
-  * **Supported Asset:** USDC (Stellar Asset Contract)
+* **Network:** Stellar Testnet
+* **Smart Contract Environment:** Soroban
+* **Deployed Factory Contract ID:** `CAWAKGBTHWFMTB6O74CDJ5WOVLLFZ5WMKTBKOP2FNB5BUMTQPZYQZN3J`
+* **Supported Asset:** USDC (Stellar Asset Contract)
 
 -----
 
@@ -80,56 +104,60 @@ Freelance digital artists and their clients face rampant fraud. Artists suffer s
 
 Unlike traditional DApps that rely on a single, massive monolithic smart contract to track all users, ComiSure creates a **unique, physically isolated Smart Contract for every single commission.**
 
-1.  **Frontend Request:** The UI requests a new Escrow.
-2.  **Backend Engine:** The FastAPI server connects to the Stellar CLI natively.
-3.  **On-the-fly Compilation:** The backend drops a pre-compiled `comi_sure.wasm` bytecode payload directly onto the Stellar Network.
-4.  **Initialization:** The backend initializes the contract exclusively with the specific Client and Artist addresses, mapping itself as the irrevocable `admin`.
+1. **Frontend Request:** The UI requests a new Escrow.
+2. **Backend Engine:** The FastAPI server connects to the Stellar CLI natively.
+3. **On-the-fly Compilation:** The backend drops a pre-compiled `comi_sure.wasm` bytecode payload directly onto the Stellar Network.
+4. **Initialization:** The backend initializes the contract exclusively with the specific Client and Artist addresses, mapping itself as the irrevocable `admin`.
 
 -----
 
 ## 🛠 Tech Stack
 
-  - **Smart Contract Level:** Soroban SDK (Rust), `wasm32-unknown-unknown`
-  - **Backend API Layer:** Python 3, FastAPI, SQLModel, Uvicorn
-  - **Frontend App:** Frontend React 18, Vite, Tailwind CSS, Framer Motion
-  - **Stellar SDK:** `@stellar/stellar-sdk`, `@creit-tech/stellar-wallets-kit`
+* **Smart Contract Level:** Soroban SDK (Rust), `wasm32-unknown-unknown`
+* **Backend API Layer:** Python 3, FastAPI, SQLModel, Uvicorn, PostgreSQL
+* **Frontend App:** Frontend React 18, Vite, Tailwind CSS, Framer Motion
+* **Stellar SDK:** `@stellar/stellar-sdk`, `@creit-tech/stellar-wallets-kit`
 
------
 
-## ☁️ Deployment Architecture (Vercel + Railway)
+---
 
-Because of the dynamic compilation pipeline, ComiSure requires a specialized deployment setup.
+## ☁️ Deployment Architecture (Vercel + Render)
 
-### 1\. Frontend (Deploy to Vercel)
+Because of the dynamic compilation pipeline and state persistence, ComiSure requires a specialized cloud infrastructure split between edge hosting and persistent container engines.
 
-The React Frontend is extremely portable and optimized for **Vercel**.
-Ensure your Vercel Project points the *Root Directory* to `frontend/`.
+### 1. Frontend (Deployed to Vercel)
+
+The React Frontend is lightweight, portable, and fully optimized for static hosting environments like **Vercel**.
+Ensure your Vercel Project points its *Root Directory* to `frontend/`.
 
 **Required Vercel Environment Variables:**
+* `VITE_SOROBAN_RPC`: `https://soroban-testnet.stellar.org`
+* `VITE_API_URL`: `<YOUR_RENDER_WEB_SERVICE_URL>` (e.g., `https://comisure-backend.onrender.com`)
 
-  - `VITE_SOROBAN_RPC`: `https://soroban-testnet.stellar.org`
-  - `VITE_API_URL`: `<YOUR_RAILWAY_URL>` (e.g., `https://comisure-backend.up.railway.app`)
+### 2. Backend & Database (Deployed to Render)
 
-### 2\. Backend (Deploy to Railway)
+The strict requirement for the **Stellar CLI**, background system processes, and persistent data storage is handled seamlessly via **Render**.
 
-The strict requirement for the **Stellar CLI** and persistent database connections makes **Railway** the best host for the Python layer.
+#### A. Database Layer (Render PostgreSQL)
+1. Create a **New PostgreSQL** instance on your Render Dashboard.
+2. Once provisioned, copy the **Internal Database URL** (if connecting from within Render) or **External Database URL**.
 
-1.  Create a new service on Railway.app.
-2.  Link this GitHub repo and set the **Root Directory** to `/backend`.
-3.  Railway will instantly detect our custom `Dockerfile` and install the Linux Stellar CLI implicitly\!
+#### B. API Layer (Render Web Service)
+1. Create a **New Web Service** on Render and link this GitHub repository.
+2. Set the **Root Directory** to `backend/`.
+3. Configure the environment to use your custom `Dockerfile` (Render will build the container from it, automatically installing the Linux Stellar CLI implicitly).
 
-**Required Railway Environment Variables:**
+**Required Render Environment Variables:**
+* `DATABASE_URL`: Your Render PostgreSQL connection string (e.g., `postgresql://user:password@hostname/dbname`).
+* `DEPLOYER_SECRET_KEY`: Your deployer identity for signing contract deployments. This can be either a raw Stellar secret seed (`S...`) or a 24-word Stellar seed phrase.
 
-  - `DATABASE_URL`: Let Railway auto-provision a PostgreSQL database, or leave blank to fall back to a volatile SQLite file.
-  - `DEPLOYER_SECRET_KEY`: Your deployer identity for signing contract deploys. This can be either a raw Stellar secret seed (`S...`) or a 24-word Stellar seed phrase, depending on how the identity was generated.
-
------
+---
 
 ## 🏃 Local Development Quickstart
 
 If you are running the system locally for development, run both services side-by-side:
 
-### 1\. Fast API Backend
+### 1\. FastAPI Backend
 
 1. Navigate to the backend directory and set up a virtual environment:
 ```bash
@@ -163,11 +191,11 @@ cd frontend
 npm install
 npm run dev
 ```
-*The web app will run at http://localhost:5173. You must have the [Freighter browser extension](https://www.freighter.app/) installed to connect your wallet\!*
+*The web app will run at http://localhost:5173. You must have the [Freighter browser extension](https://www.freighter.app/) installed to connect your wallet!*
 
------
+---
 
-## [NEW FEATURE]🔒 Security Hardening, Auth, & Rate Limiting
+## 🔒 Security Hardening, Auth, & Rate Limiting
 
 ### 1. Secret Key Encryption (AES-256-GCM)
 The backend deployer private key (`DEPLOYER_SECRET_KEY`) is stored encrypted at rest inside environment variables (e.g., `DEPLOYER_SECRET_KEY_ENCRYPTED_v1`) and decrypted dynamically in memory inside a secure context manager. Once used, the memory is explicitly zeroed out to prevent exposure.
@@ -188,16 +216,16 @@ To authenticate, a user signs a cryptographic challenge using their Stellar wall
 - **Auth endpoints:** 10 requests/minute per IP.
 - **Contract creation (`POST /contracts`):** 5 requests/minute per authenticated user.
 
------
+---
 
 ## ⚙️ Smart Contract Development
 
-> **📖 Note:** For a comprehensive breakdown of the smart contract's internal logic, data structures, and function signatures, please refer to the [smart contract documentation.](SMART_CONTRACT_API.md).
+> **📖 Note:** For a comprehensive breakdown of the smart contract's internal logic, data structures, and function signatures, please refer to the [smart contract documentation](contract/SMART_CONTRACT_API.md).
 
 ### Prerequisites
 
-  * Rust toolchain target `wasm32v1-none`
-  * Stellar CLI `22.0.0+`
+- Rust toolchain target `wasm32v1-none`
+- Stellar CLI `22.0.0+`
 
 ### Build & Test
 
@@ -213,12 +241,12 @@ cargo test
 
 ```text
 ComiSure/
-├── frontend/           # React + Vite application & Wallet SDK integration
-├── backend/            # Python FastAPI dynamic deployer & SQLite tracker
+├── frontend/            # React + Vite application & Wallet SDK integration
+├── backend/             # Python FastAPI dynamic deployer & PostgreSQL tracker
 ├── Cargo.toml          # Soroban package dependencies
 └── contract/
   ├── lib.rs          # Soroban Escrow Smart Contract code
-  └── test.rs         # Local testings for happy path & unauthorized calls
+  └── test.rs         # Local tests for happy path & unauthorized calls
 ```
 
 -----
