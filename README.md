@@ -186,7 +186,9 @@ uvicorn main:app --reload
 
 ### 2\. React Frontend
 
-```bash
+Bash
+
+```
 cd frontend
 npm install
 npm run dev
@@ -229,7 +231,9 @@ To authenticate, a user signs a cryptographic challenge using their Stellar wall
 
 ### Build & Test
 
-```bash
+Bash
+
+```
 # Compile the contract to an optimised Wasm binary
 stellar contract build
 
@@ -249,10 +253,3 @@ ComiSure/
   └── test.rs         # Local tests for happy path & unauthorized calls
 ```
 
------
-
-## License
-
-MIT License
-
-Copyright (c) 2026 ComiSure Contributors
