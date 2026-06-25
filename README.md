@@ -131,14 +131,29 @@ If you are running the system locally for development, run both services side-by
 
 ### 1\. Fast API Backend
 
+1. Navigate to the backend directory and set up a virtual environment:
 ```bash
 cd backend
 python -m venv venv
 .\venv\Scripts\activate   # Use `source venv/bin/activate` on Mac/Linux
 pip install -r requirements.txt
-uvicorn main:app --reload
 ```
 
+2. Run a local Redis server for rate limiting (optional; if not running, backend falls back to in-memory tracking):
+   - **Docker:** `docker run --name comisure-redis -p 6379:6379 -d redis`
+   - **macOS (Homebrew):** `brew install redis && brew services start redis`
+   - **Ubuntu/Debian:** `sudo apt update && sudo apt install redis-server && sudo service redis-server start`
+
+3. Encrypt your Stellar deployer secret key for the environment:
+```bash
+python scripts/encrypt_secret.py
+```
+Copy the output base64 string to your `.env` as `DEPLOYER_SECRET_KEY_ENCRYPTED_v1` and set `DEPLOYER_DECRYPTION_PASSPHRASE`.
+
+4. Start the backend:
+```bash
+uvicorn main:app --reload
+```
 *The API will run at [http://127.0.0.1:8000](http://127.0.0.1:8000).*
 
 ### 2\. React Frontend
@@ -148,8 +163,30 @@ cd frontend
 npm install
 npm run dev
 ```
-
 *The web app will run at http://localhost:5173. You must have the [Freighter browser extension](https://www.freighter.app/) installed to connect your wallet\!*
+
+-----
+
+## [NEW FEATURE]🔒 Security Hardening, Auth, & Rate Limiting
+
+### 1. Secret Key Encryption (AES-256-GCM)
+The backend deployer private key (`DEPLOYER_SECRET_KEY`) is stored encrypted at rest inside environment variables (e.g., `DEPLOYER_SECRET_KEY_ENCRYPTED_v1`) and decrypted dynamically in memory inside a secure context manager. Once used, the memory is explicitly zeroed out to prevent exposure.
+
+Key rotation is supported via:
+- `DEPLOYER_SECRET_KEY_VERSION` (determines current active deployer version).
+- `DEPLOYER_SECRET_KEY_ENCRYPTED_<version>` (holds version-specific keys).
+
+### 2. Wallet-Based Authentication (Challenge-Response)
+To authenticate, a user signs a cryptographic challenge using their Stellar wallet:
+1. `GET /auth/challenge?wallet_address=G...` returns a short-lived, unique challenge.
+2. The user signs the challenge using their Stellar private key (e.g., via Freighter/Albedo).
+3. `POST /auth/login` verifies the signature using `stellar_sdk.Keypair.verify()`. If valid, it issues a 24-hour JWT token containing the user's role.
+4. Users logging in with public keys defined in `ADMIN_WALLET_ADDRESSES` are dynamically granted the `admin` role.
+
+### 3. Rate Limiting
+- **Global limit:** 60 requests/minute per IP.
+- **Auth endpoints:** 10 requests/minute per IP.
+- **Contract creation (`POST /contracts`):** 5 requests/minute per authenticated user.
 
 -----
 
