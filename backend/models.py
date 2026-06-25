@@ -14,6 +14,7 @@ class Commission(CommissionBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     contract_id: Optional[str] = Field(default=None) # Set when contract deployment/initialization happens
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    deployer_key_version: Optional[str] = Field(default=None)
 
 class CommissionCreate(CommissionBase):
     pass
@@ -22,6 +23,7 @@ class CommissionRead(CommissionBase):
     id: int
     contract_id: Optional[str]
     created_at: datetime
+    deployer_key_version: Optional[str]
 
 class CommissionUpdate(SQLModel):
     status: Optional[str] = None
@@ -44,3 +46,8 @@ class DisputeCreate(DisputeBase):
 class DisputeRead(DisputeBase):
     id: int
     created_at: datetime
+
+class User(SQLModel, table=True):
+    wallet_address: str = Field(primary_key=True, index=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    role: str = Field(default="client") # client | artist | admin
