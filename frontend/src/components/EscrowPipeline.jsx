@@ -26,8 +26,8 @@ const bounceIn = {
   }),
 };
 
-// Arrow connector fades in after its preceding node
-const arrowVariant = {
+// Line connector grows in from the left after node appears
+const lineVariant = {
   hidden: { opacity: 0, scaleX: 0 },
   visible: (i) => ({
     opacity: 1,
@@ -35,63 +35,47 @@ const arrowVariant = {
     transition: {
       type: 'spring',
       stiffness: 200,
-      damping: 20,
+      damping: 22,
       delay: i * 0.18 + 0.1,
     },
   }),
 };
 
-function ConnectorArrow({ index }) {
+function ConnectorLine({ index }) {
   return (
-    <motion.svg
+    <motion.div
       custom={index}
-      variants={arrowVariant}
+      variants={lineVariant}
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true }}
-      className="w-14 h-4 mx-1 hidden md:block flex-shrink-0 origin-left"
-      viewBox="0 0 56 16"
+      className="hidden md:block w-12 mx-2 origin-left"
     >
-      <defs>
-        <linearGradient id={`irisGrad-${index}`} x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="11.43%" stopColor="#479dff" />
-          <stop offset="78.2%" stopColor="#0069e0" />
-        </linearGradient>
-      </defs>
-      <path
-        d="M0 8 H46"
-        fill="none"
-        stroke={`url(#irisGrad-${index})`}
-        strokeWidth="2"
-        strokeDasharray="6 4"
-        className="animate-dash-flow"
-      />
-      <polygon points="44,4 54,8 44,12" fill="#0069e0" />
-    </motion.svg>
+      <div className="h-[2px] w-full rounded-full bg-border relative overflow-visible">
+        {/* Glow layer */}
+        <div className="absolute inset-0 h-[2px] rounded-full bg-accent/60 blur-[4px]" />
+        {/* Solid line */}
+        <div className="absolute inset-0 h-[2px] rounded-full bg-accent/80" />
+      </div>
+    </motion.div>
   );
 }
 
-function ConnectorVertical({ index }) {
+function ConnectorLineVertical({ index }) {
   return (
-    <motion.svg
+    <motion.div
       custom={index}
-      variants={arrowVariant}
+      variants={lineVariant}
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true }}
-      className="w-4 h-10 my-1 md:hidden origin-top"
-      viewBox="0 0 16 40"
+      className="md:hidden w-[2px] h-8 my-2 origin-top mx-auto"
     >
-      <path
-        d="M8 0 V30"
-        fill="none"
-        stroke="var(--color-accent)"
-        strokeWidth="2"
-        strokeDasharray="6 4"
-        className="animate-dash-flow"
-      />
-      <polygon points="4,28 8,38 12,28" fill="var(--color-accent)" />
-    </motion.svg>
+      <div className="w-[2px] h-full rounded-full bg-border relative overflow-visible">
+        <div className="absolute inset-0 w-[2px] rounded-full bg-accent/60 blur-[4px]" />
+        <div className="absolute inset-0 w-[2px] rounded-full bg-accent/80" />
+      </div>
+    </motion.div>
   );
 }
 
@@ -133,8 +117,8 @@ export default function EscrowPipeline() {
             <PipelineNode {...stage} index={i} />
             {i < stages.length - 1 && (
               <>
-                <ConnectorArrow index={i} />
-                <ConnectorVertical index={i} />
+                <ConnectorLine index={i} />
+                <ConnectorLineVertical index={i} />
               </>
             )}
           </React.Fragment>
@@ -167,8 +151,8 @@ export default function EscrowPipeline() {
             <p className="text-xs text-fog">Client can self-refund</p>
           </motion.div>
 
-          <span className="text-fog text-lg hidden md:block">or</span>
-          <span className="text-fog text-sm md:hidden">or</span>
+          <span className="text-fog text-lg hidden md:block">—</span>
+          <span className="text-fog text-sm md:hidden">—</span>
 
           {/* Admin Resolves */}
           <motion.div
