@@ -229,9 +229,10 @@ function CreateCommissionView({ address, onCancel, onSuccess }) {
       </p>
 
       {error && (
-        <div className="mb-6 p-4 rounded-card-sm bg-status-refunded border border-border">
+        <div className="mb-6 p-4 rounded-card-sm bg-status-refunded border border-border overflow-hidden">
           <p className="text-sm font-medium text-ink mb-1">Deployment failed</p>
-          <p className="text-xs text-graphite">{error}</p>
+          <p className="text-xs text-graphite break-words whitespace-pre-wrap">{error}</p>
+          <button onClick={() => setError(null)} className="mt-2 text-xs text-accent hover:underline">Dismiss</button>
         </div>
       )}
 
