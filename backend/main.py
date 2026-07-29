@@ -1,6 +1,7 @@
 import os
 import logging
 from typing import List, Optional
+from datetime import datetime, timedelta
 from pydantic import BaseModel
 from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -160,6 +161,10 @@ def create_contract(
     if commission.amount_usdc <= 0:
         raise HTTPException(status_code=400, detail="USDC amount must be greater than zero.")
         
+    # Validate deadline range (1–90 days)
+    if commission.deadline_days < 1 or commission.deadline_days > 90:
+        raise HTTPException(status_code=400, detail="Deadline must be between 1 and 90 days.")
+        
     # Enforce authorization: request client address must match current user wallet address
     if current_user.role != ROLE_ADMIN and commission.client_address != current_user.wallet_address:
         raise HTTPException(
@@ -174,12 +179,18 @@ def create_contract(
     active_version = os.getenv("DEPLOYER_SECRET_KEY_VERSION", "v1")
     db_commission.deployer_key_version = active_version
     
+    # Compute deadline as UTC datetime and Unix timestamp for the smart contract
+    deadline_dt = datetime.utcnow() + timedelta(days=commission.deadline_days)
+    deadline_unix = int(deadline_dt.timestamp())
+    db_commission.deadline_at = deadline_dt
+    
     # Trigger smart contract deployment
     try:
         contract_id = stellar_utils.deploy_and_initialize_escrow(
             client_address=db_commission.client_address,
             artist_address=db_commission.artist_address,
-            version=active_version
+            version=active_version,
+            deadline_unix=deadline_unix
         )
         db_commission.contract_id = contract_id
     except Exception as e:
@@ -324,6 +335,55 @@ def refund_contract(
         logger.error(f"Admin refund failed: {e}")
         raise HTTPException(status_code=500, detail="Admin refund transaction failed.")
         
+    return {"status": "success"}
+
+@app.post("/contracts/{contract_id}/client-refund")
+def client_refund_expired(
+    contract_id: int,
+    request: Request,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_user)
+):
+    """
+    Syncs off-chain status after the client has submitted client_refund_expired on-chain.
+    Only the registered client can call this. Verifies the deadline has passed and
+    confirms the on-chain state is Refunded before updating the database.
+    """
+    db_commission = session.get(Commission, contract_id)
+    if not db_commission or not db_commission.contract_id:
+        raise HTTPException(status_code=404, detail="Valid commission contract not found")
+
+    # Only the client can trigger this
+    if db_commission.client_address != current_user.wallet_address:
+        raise HTTPException(status_code=403, detail="Only the client can claim an expired refund.")
+
+    # Check deadline in the database first (fast fail before querying on-chain)
+    if db_commission.deadline_at and datetime.utcnow() < db_commission.deadline_at:
+        raise HTTPException(status_code=400, detail="Deadline has not passed yet.")
+
+    if db_commission.status == "Refunded":
+        return {"status": "success", "detail": "Contract is already refunded."}
+
+    # Verify on-chain state is Refunded (client must have already signed on-chain)
+    try:
+        on_chain_state = stellar_utils.get_contract_state_on_chain(
+            db_commission.contract_id,
+            version=db_commission.deployer_key_version
+        )
+        if on_chain_state != "Refunded":
+            raise HTTPException(
+                status_code=400,
+                detail=f"On-chain state is '{on_chain_state}'. Submit client_refund_expired on-chain first."
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"On-chain verification failed: {e}")
+        raise HTTPException(status_code=500, detail="Failed to verify on-chain state.")
+
+    db_commission.status = "Refunded"
+    session.add(db_commission)
+    session.commit()
     return {"status": "success"}
 
 # Disputes Resolution Management

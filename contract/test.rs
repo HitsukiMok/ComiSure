@@ -11,6 +11,7 @@ mod tests {
     use crate::{ComiSureContract, ComiSureContractClient, EscrowState};
     use soroban_sdk::{
         testutils::Address as _, // gives Address::generate(&env)
+        testutils::Ledger as _,  // gives env.ledger().set_timestamp()
         token, Address, Env,
     };
 
@@ -37,6 +38,9 @@ mod tests {
         // access-control assertions (see Test 2), making this safe for most tests.
         env.mock_all_auths();
 
+        // Set ledger timestamp to a known value for deterministic deadline testing
+        env.ledger().set_timestamp(1_000_000);
+
         // Generate four independent test wallets
         let client_addr = Address::generate(&env);
         let artist_addr = Address::generate(&env);
@@ -55,8 +59,11 @@ mod tests {
         let contract_id = env.register(ComiSureContract, ());
         let contract = ComiSureContractClient::new(&env, &contract_id);
 
-        // One-time initialization — wires up participants and the USDC token address
-        contract.initialize(&client_addr, &artist_addr, &admin_addr, &token_id);
+        // Deadline: 14 days from now (1_000_000 + 14 * 86_400 = 2_209_600)
+        let deadline: u64 = 1_000_000 + (14 * 86_400);
+
+        // One-time initialization — wires up participants, USDC token, and deadline
+        contract.initialize(&client_addr, &artist_addr, &admin_addr, &token_id, &deadline);
 
         (env, contract_id, client_addr, artist_addr, admin_addr, token_id)
     }
@@ -185,6 +192,115 @@ mod tests {
             token.balance(&contract_id),
             deposit_amount,
             "USDC token balance on the contract address must equal the deposit"
+        );
+    }
+
+    // ── Test 4: Client Refund After Deadline Expires ──────────────────────────
+    /// Verifies that the client can self-refund after the commission deadline passes.
+    ///
+    /// Scenario:
+    ///   Client deposits funds, artist fails to deliver, deadline expires.
+    ///   Client calls client_refund_expired() and receives their funds back.
+    ///
+    /// Expected outcome: funds returned to client, state = Refunded.
+    #[test]
+    fn test_client_refund_after_deadline_expires() {
+        let (env, contract_id, client, _artist, _admin, token_id) = setup();
+        let contract = ComiSureContractClient::new(&env, &contract_id);
+        let token = token::Client::new(&env, &token_id);
+
+        let deposit_amount: i128 = 500_0000000;
+        contract.deposit_funds(&client, &deposit_amount);
+
+        // Advance ledger time well past the deadline (2_209_600)
+        env.ledger().set_timestamp(3_000_000);
+
+        // Client claims the expired refund
+        contract.client_refund_expired(&client);
+
+        // Contract should be empty
+        assert_eq!(
+            token.balance(&contract_id),
+            0,
+            "escrow contract should hold zero USDC after expired refund"
+        );
+        // State must be Refunded
+        assert_eq!(
+            contract.get_state(),
+            EscrowState::Refunded,
+            "state should be Refunded after client_refund_expired"
+        );
+    }
+
+    // ── Test 5: Client Refund Blocked Before Deadline ─────────────────────────
+    /// Verifies that the contract rejects a refund attempt when the deadline
+    /// has not yet passed. The client cannot prematurely reclaim funds.
+    ///
+    /// Expected outcome: panic with "deadline has not passed yet"
+    #[test]
+    #[should_panic(expected = "deadline has not passed yet")]
+    fn test_client_refund_blocked_before_deadline() {
+        let (env, contract_id, client, _artist, _admin, _token_id) = setup();
+        let contract = ComiSureContractClient::new(&env, &contract_id);
+
+        contract.deposit_funds(&client, &500_0000000_i128);
+
+        // Ledger time is still 1_000_000, deadline is 2_209_600 — not yet expired
+        contract.client_refund_expired(&client);
+    }
+
+    // ── Test 6: Artist Cannot Claim Expired Refund ────────────────────────────
+    /// Verifies that only the registered client can call client_refund_expired.
+    /// An artist (or any other wallet) attempting to claim the refund is rejected.
+    ///
+    /// Expected outcome: panic with "only the client can claim an expired refund"
+    #[test]
+    #[should_panic(expected = "only the client can claim an expired refund")]
+    fn test_artist_cannot_claim_expired_refund() {
+        let (env, contract_id, client, artist, _admin, _token_id) = setup();
+        let contract = ComiSureContractClient::new(&env, &contract_id);
+
+        contract.deposit_funds(&client, &500_0000000_i128);
+
+        // Advance past deadline
+        env.ledger().set_timestamp(3_000_000);
+
+        // Artist tries to claim — should panic
+        contract.client_refund_expired(&artist);
+    }
+
+    // ── Test 7: Approve Release Still Works After Deadline ────────────────────
+    /// Verifies that the deadline does NOT block the client from approving release.
+    /// The deadline only enables the refund path — it does not prevent the happy path.
+    ///
+    /// Scenario:
+    ///   Artist delivers late (after deadline). Client is satisfied and approves anyway.
+    ///
+    /// Expected outcome: artist receives full payment, state = Released.
+    #[test]
+    fn test_approve_release_works_after_deadline() {
+        let (env, contract_id, client, artist, _admin, token_id) = setup();
+        let contract = ComiSureContractClient::new(&env, &contract_id);
+        let token = token::Client::new(&env, &token_id);
+
+        let deposit_amount: i128 = 500_0000000;
+        contract.deposit_funds(&client, &deposit_amount);
+
+        // Advance past deadline
+        env.ledger().set_timestamp(3_000_000);
+
+        // Client still approves (artist delivered late but client accepts)
+        contract.approve_release(&client);
+
+        assert_eq!(
+            token.balance(&artist),
+            deposit_amount,
+            "artist should receive the full deposited amount after late approval"
+        );
+        assert_eq!(
+            contract.get_state(),
+            EscrowState::Released,
+            "state should be Released after approve_release even past deadline"
         );
     }
 }

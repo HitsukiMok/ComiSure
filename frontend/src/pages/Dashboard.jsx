@@ -4,8 +4,10 @@ import { useWallet } from '../contexts/WalletContext';
 import {
   getContractState,
   getContractAmount,
+  getContractDeadline,
   depositFunds,
   approveRelease,
+  clientRefundExpired,
   friendlyContractError,
 } from '../services/contract';
 import { commissionService } from '../services/api';
@@ -209,7 +211,8 @@ function CreateCommissionView({ address, onCancel, onSuccess }) {
     title: '',
     description: '',
     artist_address: '',
-    amount_usdc: '10'
+    amount_usdc: '10',
+    deadline_days: '14'
   });
 
   const handleSubmit = async (e) => {
@@ -222,6 +225,7 @@ function CreateCommissionView({ address, onCancel, onSuccess }) {
         client_address: address, // Sender is the client
         artist_address: formData.artist_address,
         amount_usdc: parseInt(formData.amount_usdc, 10),
+        deadline_days: parseInt(formData.deadline_days, 10),
       };
       
       // Hits the POST /commissions/ hook, triggering the physical contract deployment under the hood!
@@ -262,6 +266,14 @@ function CreateCommissionView({ address, onCancel, onSuccess }) {
           <input required type="number" min="1" className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:border-primary outline-none" 
             value={formData.amount_usdc} onChange={e => setFormData({...formData, amount_usdc: e.target.value})} />
         </div>
+        <div>
+          <label className="block text-sm font-bold mb-2">Deadline (Days)</label>
+          <p className="text-xs text-textmuted mb-2">
+            You can self-refund after this many days if the artist does not deliver. Min 1, max 90.
+          </p>
+          <input required type="number" min="1" max="90" className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:border-primary outline-none" 
+            value={formData.deadline_days} onChange={e => setFormData({...formData, deadline_days: e.target.value})} />
+        </div>
         <div className="pt-6 flex gap-4">
           <button type="button" onClick={onCancel} disabled={loading} className="flex-1 px-4 py-3 border border-border text-center rounded-xl hover:bg-background transition-colors">
             Cancel
@@ -279,6 +291,8 @@ function CreateCommissionView({ address, onCancel, onSuccess }) {
 function ActiveEscrowView({ commission, walletAddress }) {
   const [contractState, setContractState] = useState(null);
   const [lockedAmount,  setLockedAmount]  = useState(0n);
+  const [deadline,      setDeadline]      = useState(null);
+  const [timeLeft,      setTimeLeft]      = useState(null);
   const [loading,  setLoading]  = useState(false);
   const [fetching, setFetching] = useState(false);
   const [toast,    setToast]    = useState(null);
@@ -289,12 +303,14 @@ function ActiveEscrowView({ commission, walletAddress }) {
     if (!walletAddress || !contractId) return;
     setFetching(true);
     try {
-      const [state, amount] = await Promise.all([
+      const [state, amount, dl] = await Promise.all([
         getContractState(contractId, walletAddress),
         getContractAmount(contractId, walletAddress),
+        getContractDeadline(contractId, walletAddress).catch(() => 0n),
       ]);
       setContractState(state);
       setLockedAmount(amount);
+      setDeadline(dl);
     } catch (e) {
       console.error('Failed to fetch contract state:', e);
       setContractState('Unknown');
@@ -304,6 +320,28 @@ function ActiveEscrowView({ commission, walletAddress }) {
   }, [walletAddress, contractId]);
 
   useEffect(() => { fetchState(); }, [fetchState]);
+
+  // Countdown timer for deadline
+  useEffect(() => {
+    if (!deadline || deadline === 0n) return;
+    const deadlineMs = Number(deadline) * 1000;
+
+    const tick = () => {
+      const diff = deadlineMs - Date.now();
+      if (diff <= 0) {
+        setTimeLeft('Expired');
+      } else {
+        const days = Math.floor(diff / 86_400_000);
+        const hours = Math.floor((diff % 86_400_000) / 3_600_000);
+        const mins = Math.floor((diff % 3_600_000) / 60_000);
+        setTimeLeft(`${days}d ${hours}h ${mins}m`);
+      }
+    };
+
+    tick();
+    const interval = setInterval(tick, 60_000);
+    return () => clearInterval(interval);
+  }, [deadline]);
 
   const invoke = async (fn, label) => {
     setLoading(true);
@@ -370,6 +408,15 @@ function ActiveEscrowView({ commission, walletAddress }) {
             <p className="text-xs text-textmuted mb-1">Escrow State</p>
             <p className="text-2xl font-bold">{contractState ?? '—'}</p>
           </div>
+          <div className="p-4 rounded-xl border border-border bg-background sm:col-span-2">
+            <p className="text-xs text-textmuted mb-1">Deadline</p>
+            <p className={`text-2xl font-bold ${timeLeft === 'Expired' ? 'text-red-400' : ''}`}>
+              {timeLeft ?? '—'}
+            </p>
+            {timeLeft === 'Expired' && (
+              <p className="text-xs text-red-400 mt-1">The commission deadline has passed. Client can claim a refund.</p>
+            )}
+          </div>
         </div>
       </motion.div>
 
@@ -401,6 +448,22 @@ function ActiveEscrowView({ commission, walletAddress }) {
             Approve & Release
           </button>
         </motion.div>
+
+        {/* Claim Expired Refund — only visible when Funded AND deadline expired */}
+        {contractState === 'Funded' && timeLeft === 'Expired' && (
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-panel p-6">
+            <h2 className="text-xl font-bold mb-1">Claim Expired Refund</h2>
+            <p className="text-textmuted text-sm mb-4">The deadline has passed. You can reclaim your locked USDC without admin help.</p>
+            <button
+              disabled={loading}
+              onClick={() => invoke(() => clientRefundExpired(contractId, walletAddress), 'Expired Refund')}
+              className="w-full px-4 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
+              Claim Refund (Deadline Expired)
+            </button>
+          </motion.div>
+        )}
 
         {/* Admin Bounds */}
         <div className="md:col-span-2 mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">

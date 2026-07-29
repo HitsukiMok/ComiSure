@@ -67,10 +67,10 @@ def setup_cloud_deployer():
     except Exception as e:
         raise Exception(f"Cloud Deployer setup failed: {e}")
 
-def deploy_and_initialize_escrow(client_address: str, artist_address: str, version: str = None) -> str:
+def deploy_and_initialize_escrow(client_address: str, artist_address: str, version: str = None, deadline_unix: int = None) -> str:
     """
     Deploys a new instance of the ComiSure escrow contract on the testnet
-    and initializes it with the given participants.
+    and initializes it with the given participants and deadline.
     """
     admin_address = get_deployer_address(version)
     env_vars = {}
@@ -130,7 +130,8 @@ def deploy_and_initialize_escrow(client_address: str, artist_address: str, versi
         "--client", client_address,
         "--artist", artist_address,
         "--admin", admin_address,
-        "--token", USDC_TOKEN
+        "--token", USDC_TOKEN,
+        "--deadline", str(deadline_unix)
     ]
     
     init_res = _run(init_cmd, env_vars=env_vars)

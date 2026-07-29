@@ -19,12 +19,13 @@ use soroban_sdk::{contract, contractimpl, contracttype, token, Address, Env};
 #[contracttype]
 #[derive(Clone)]
 pub enum DataKey {
-    Client, // Address of the commissioner (pays for the artwork)
-    Artist, // Address of the freelance illustrator (receives payment)
-    Admin,  // Trusted dispute-resolution address (ComiSure platform wallet)
-    Token,  // USDC token contract address (Circle's Stellar-native USDC)
-    Amount, // i128 amount of USDC locked in escrow (7-decimal precision)
-    State,  // Current EscrowState — drives all business logic guards
+    Client,   // Address of the commissioner (pays for the artwork)
+    Artist,   // Address of the freelance illustrator (receives payment)
+    Admin,    // Trusted dispute-resolution address (ComiSure platform wallet)
+    Token,    // USDC token contract address (Circle's Stellar-native USDC)
+    Amount,   // i128 amount of USDC locked in escrow (7-decimal precision)
+    State,    // Current EscrowState — drives all business logic guards
+    Deadline, // Unix timestamp (u64) after which the client can self-refund
 }
 
 // ── Escrow state machine ──────────────────────────────────────────────────────
@@ -55,20 +56,28 @@ impl ComiSureContract {
     /// Panics if called a second time to prevent participant substitution attacks.
     pub fn initialize(
         env: Env,
-        client: Address, // Commissioner's wallet address
-        artist: Address, // Artist's wallet address (must have a USDC trustline)
-        admin: Address,  // ComiSure dispute-resolution wallet
-        token: Address,  // Stellar USDC token contract (or any SAC-compatible asset)
+        client: Address,   // Commissioner's wallet address
+        artist: Address,   // Artist's wallet address (must have a USDC trustline)
+        admin: Address,    // ComiSure dispute-resolution wallet
+        token: Address,    // Stellar USDC token contract (or any SAC-compatible asset)
+        deadline: u64,     // Unix timestamp after which client can self-refund
     ) {
         // Guard: block re-initialization — if State already exists, contract is live
         if env.storage().instance().has(&DataKey::State) {
             panic!("ComiSure: contract already initialized");
         }
 
+        // Validate: deadline must be in the future
+        let now = env.ledger().timestamp();
+        if deadline <= now {
+            panic!("ComiSure: deadline must be in the future");
+        }
+
         env.storage().instance().set(&DataKey::Client, &client);
         env.storage().instance().set(&DataKey::Artist, &artist);
         env.storage().instance().set(&DataKey::Admin, &admin);
         env.storage().instance().set(&DataKey::Token, &token);
+        env.storage().instance().set(&DataKey::Deadline, &deadline);
         env.storage().instance().set(&DataKey::State, &EscrowState::Pending);
         env.storage().instance().set(&DataKey::Amount, &0i128);
     }
@@ -227,6 +236,48 @@ impl ComiSureContract {
         env.storage().instance().set(&DataKey::State, &EscrowState::Released);
     }
 
+    // ── client_refund_expired ────────────────────────────────────────────────
+    /// Called by the client after the commission deadline expires.
+    /// Returns locked USDC to the client without admin intervention.
+    ///
+    /// Why this exists:
+    ///   - Protects clients against artists who accept a commission and disappear
+    ///     without delivering. After the deadline, the client can reclaim their
+    ///     funds autonomously — no admin bottleneck, no waiting for support tickets.
+    ///   - The deadline is immutable (set once at initialization), so neither party
+    ///     can manipulate the timer after the escrow is live.
+    pub fn client_refund_expired(env: Env, caller: Address) {
+        caller.require_auth();
+
+        // Authorization: only the registered client can claim an expired refund
+        let client: Address = env.storage().instance().get(&DataKey::Client).unwrap();
+        if caller != client {
+            panic!("ComiSure: unauthorized — only the client can claim an expired refund");
+        }
+
+        // State guard: refund only valid when funds are locked
+        let state: EscrowState = env.storage().instance().get(&DataKey::State).unwrap();
+        if state != EscrowState::Funded {
+            panic!("ComiSure: expired refund only allowed from Funded state");
+        }
+
+        // Deadline check: current ledger time must exceed the stored deadline
+        let deadline: u64 = env.storage().instance().get(&DataKey::Deadline).unwrap();
+        let now = env.ledger().timestamp();
+        if now <= deadline {
+            panic!("ComiSure: deadline has not passed yet");
+        }
+
+        // Execute refund — return the full locked amount to the client
+        let token_addr: Address = env.storage().instance().get(&DataKey::Token).unwrap();
+        let amount: i128 = env.storage().instance().get(&DataKey::Amount).unwrap();
+        let token_client = token::Client::new(&env, &token_addr);
+        token_client.transfer(&env.current_contract_address(), &client, &amount);
+
+        // Mark as Refunded — no further operations allowed on this escrow
+        env.storage().instance().set(&DataKey::State, &EscrowState::Refunded);
+    }
+
     // ── View helpers ──────────────────────────────────────────────────────────
 
     /// Returns the current escrow state (Pending / Funded / Released / Refunded).
@@ -239,6 +290,12 @@ impl ComiSureContract {
     /// Remains set even after release/refund so the history is preserved on-chain.
     pub fn get_amount(env: Env) -> i128 {
         env.storage().instance().get(&DataKey::Amount).unwrap()
+    }
+
+    /// Returns the deadline Unix timestamp (seconds since epoch).
+    /// Read-only; does not mutate storage.
+    pub fn get_deadline(env: Env) -> u64 {
+        env.storage().instance().get(&DataKey::Deadline).unwrap()
     }
 }
 
