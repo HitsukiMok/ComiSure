@@ -71,7 +71,7 @@ export const WalletProvider = ({ children }) => {
     }
   }, []);
 
-  // Connect wallet + authenticate
+  // Connect wallet (skip backend auth — endpoints work without JWT)
   const connectWallet = useCallback(async () => {
     try {
       setIsConnecting(true);
@@ -81,15 +81,12 @@ export const WalletProvider = ({ children }) => {
       const res = await StellarWalletsKit.authModal();
       console.log('[Wallet] Connected:', res.address);
       setAddress(res.address);
-
-      // Authenticate with backend
-      await authenticateWithBackend(res.address);
     } catch (error) {
       console.error('[Wallet] Connection error:', error);
     } finally {
       setIsConnecting(false);
     }
-  }, [authenticateWithBackend]);
+  }, []);
 
   const requestConnect = useCallback(() => {
     setShowConsent(true);
