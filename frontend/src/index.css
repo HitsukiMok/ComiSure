@@ -166,6 +166,59 @@ body {
   animation-delay: -3s;
 }
 
+/* ─── Animated Background Gradient ────────────────────────────────────── */
+@keyframes gradient-drift {
+  0% { transform: translate(0%, 0%) scale(1); }
+  25% { transform: translate(5%, -8%) scale(1.05); }
+  50% { transform: translate(-3%, 5%) scale(0.98); }
+  75% { transform: translate(-6%, -3%) scale(1.03); }
+  100% { transform: translate(0%, 0%) scale(1); }
+}
+
+.bg-gradient-animate {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.bg-gradient-animate::before,
+.bg-gradient-animate::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.4;
+  animation: gradient-drift 18s ease-in-out infinite;
+}
+
+.bg-gradient-animate::before {
+  width: 60%;
+  height: 60%;
+  top: -10%;
+  left: -10%;
+  background: radial-gradient(circle, rgba(0, 105, 224, 0.3), transparent 70%);
+  animation-delay: 0s;
+}
+
+.bg-gradient-animate::after {
+  width: 50%;
+  height: 50%;
+  bottom: -10%;
+  right: -10%;
+  background: radial-gradient(circle, rgba(71, 157, 255, 0.2), transparent 70%);
+  animation-delay: -9s;
+}
+
+html.dark .bg-gradient-animate::before {
+  background: radial-gradient(circle, rgba(71, 157, 255, 0.12), transparent 70%);
+}
+
+html.dark .bg-gradient-animate::after {
+  background: radial-gradient(circle, rgba(147, 197, 253, 0.08), transparent 70%);
+}
+
 /* ─── Reduced Motion ─────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -179,7 +232,9 @@ body {
   .animate-travel-full,
   .animate-travel-full-delayed,
   .animate-travel-full-v,
-  .animate-travel-full-v-delayed {
+  .animate-travel-full-v-delayed,
+  .bg-gradient-animate::before,
+  .bg-gradient-animate::after {
     animation: none !important;
   }
 }

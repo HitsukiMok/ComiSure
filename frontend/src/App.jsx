@@ -9,6 +9,7 @@ function App() {
   return (
     <Router>
       <div className="min-h-screen bg-canvas text-ink font-sans transition-colors duration-300">
+        <div className="bg-gradient-animate" aria-hidden="true" />
         <Navbar />
         <Routes>
           <Route path="/" element={<Home />} />

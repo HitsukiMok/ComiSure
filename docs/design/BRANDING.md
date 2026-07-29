@@ -173,8 +173,27 @@ ComiSure speaks like a knowledgeable friend who understands art and crypto:
 | Refund button reveal | Fade + scale 0.95→1 | 0.4s |
 | 3D illustrations | Gentle float/bob | 3s infinite |
 | Page transitions | Opacity + direction | 0.3s |
+| Background gradient | Drift + scale blobs | 18s infinite |
+| Pipeline orbs | Travel full line width | 6s linear infinite |
+| Pipeline nodes | Bounce-in on scroll | Spring (stiffness 300) |
+| Hover lift (cards/buttons) | y:-4 to -6, scale 1.02-1.05 | Spring (stiffness 400) |
 
 Easing: `cubic-bezier(0.16, 1, 0.3, 1)`. Respect `prefers-reduced-motion`.
+
+### 10.1 Animated Background Gradient
+
+A fixed-position layer behind all content with two large blurred radial gradient blobs that slowly drift and scale. Creates a subtle living atmosphere without distracting from content.
+
+| Mode | Blob 1 (top-left) | Blob 2 (bottom-right) |
+|------|--------------------|-----------------------|
+| Light | `rgba(0, 105, 224, 0.3)` (iris blue) | `rgba(71, 157, 255, 0.2)` (sky blue) |
+| Dark | `rgba(71, 157, 255, 0.12)` (lighter iris) | `rgba(147, 197, 253, 0.08)` (pale blue) |
+
+- Filter: `blur(120px)` on both blobs
+- Opacity: 0.4
+- Animation: translate + scale drift, 18s ease-in-out infinite, second blob offset by -9s
+- `z-index: -1`, `pointer-events: none`, `position: fixed`
+- Disabled under `prefers-reduced-motion`
 
 ---
 
