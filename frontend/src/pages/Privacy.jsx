@@ -11,7 +11,7 @@ export default function Privacy() {
 
       <article className="prose-custom">
         <h1>Privacy Policy</h1>
-        <p className="text-sm text-fog">Effective Date: July 29, 2025</p>
+        <p className="text-sm text-fog">Effective Date: July 29, 2026</p>
 
         <h2>1. Introduction</h2>
         <p>This Privacy Policy explains how ComiSure ("we," "us," "our") collects, uses, and protects information when you use our escrow platform for digital art commissions.</p>

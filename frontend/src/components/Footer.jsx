@@ -55,7 +55,7 @@ export default function Footer() {
 
         {/* Bottom */}
         <div className="mt-12 pt-6 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-fog">© 2025 ComiSure. Built on Stellar.</p>
+          <p className="text-sm text-fog">© 2026 ComiSure. Built on Stellar.</p>
           <p className="text-xs text-fog">Testnet only — not for real transactions.</p>
         </div>
       </div>

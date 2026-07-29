@@ -11,7 +11,7 @@ export default function Terms() {
 
       <article className="prose-custom">
         <h1>Terms of Service</h1>
-        <p className="text-sm text-fog">Effective Date: July 29, 2025</p>
+        <p className="text-sm text-fog">Effective Date: July 29, 2026</p>
 
         <h2>1. Agreement to Terms</h2>
         <p>By accessing or using the ComiSure platform ("Service"), you agree to these Terms of Service ("Terms"). If you do not agree, do not use the Service.</p>
