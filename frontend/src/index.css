@@ -166,6 +166,55 @@ body {
   animation-delay: -3s;
 }
 
+/* ─── Prose Styling for Legal Pages ──────────────────────────────────── */
+.prose-custom h1 {
+  font-size: 32px;
+  font-weight: 500;
+  letter-spacing: -0.64px;
+  line-height: 1.25;
+  color: var(--color-text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.prose-custom h2 {
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+  color: var(--color-text-primary);
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.prose-custom h3 {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.prose-custom p {
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+  margin-bottom: 0.75rem;
+}
+
+.prose-custom ul {
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+  padding-left: 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.prose-custom li {
+  margin-bottom: 0.35rem;
+}
+
+.prose-custom strong {
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
 /* ─── Animated Background Gradient ────────────────────────────────────── */
 @keyframes gradient-drift {
   0% { transform: translate(0%, 0%) scale(1); }
