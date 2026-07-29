@@ -10,7 +10,6 @@ const stages = [
   { step: 5, label: 'Instant Pay', desc: 'USDC releases to artist in 5 seconds', icon: Coins },
 ];
 
-// Bounce ease-out spring for nodes entering viewport
 const bounceIn = {
   hidden: { opacity: 0, y: 40, scale: 0.85 },
   visible: (i) => ({
@@ -34,7 +33,7 @@ function PipelineNode({ step, label, desc, icon: Icon, index }) {
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true, margin: '-50px' }}
-      className="flex flex-col items-center text-center relative z-10"
+      className="flex flex-col items-center text-center relative z-10 flex-1"
     >
       <div className="relative">
         <span className="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-action text-action-text text-xs flex items-center justify-center font-medium z-10">
@@ -54,23 +53,31 @@ function PipelineNode({ step, label, desc, icon: Icon, index }) {
   );
 }
 
+function GlowOrb({ className = '' }) {
+  return (
+    <div className={`absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-accent shadow-[0_0_8px_3px_rgba(0,105,224,0.7),0_0_18px_6px_rgba(71,157,255,0.35)] ${className}`} />
+  );
+}
+
 export default function EscrowPipeline() {
   return (
     <section className="w-full">
-      {/* ─── Desktop: continuous line passing through all cards ─── */}
+      {/* ─── Desktop: continuous line through cards ─── */}
       <div className="hidden md:block">
         <div className="relative">
-          {/* The continuous line — sits at vertical center of the cards (50px from top of 100px cards) */}
-          <div className="absolute top-[50px] left-0 right-0 h-[2px] z-0">
+          {/* Line — inset so it starts/ends at card centers, not container edges */}
+          <div className="absolute top-[50px] left-[50px] right-[50px] h-[2px] z-0 overflow-hidden rounded-full">
             {/* Base line */}
-            <div className="absolute inset-0 bg-border rounded-full" />
-            {/* Glow behind */}
-            <div className="absolute inset-0 bg-accent/20 blur-[4px] rounded-full" />
-            {/* Traveling orb — continuous across entire width */}
-            <div className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-accent shadow-[0_0_10px_3px_rgba(0,105,224,0.8),0_0_20px_6px_rgba(71,157,255,0.4)] animate-travel-full" />
+            <div className="absolute inset-0 bg-border" />
+            {/* Subtle glow */}
+            <div className="absolute inset-0 bg-accent/15 blur-[3px]" />
+            {/* Orb 1 */}
+            <GlowOrb className="animate-travel-full" />
+            {/* Orb 2 — offset by half so there's always one visible */}
+            <GlowOrb className="animate-travel-full-delayed" />
           </div>
 
-          {/* Nodes row */}
+          {/* Nodes */}
           <div className="relative z-10 flex items-start justify-between">
             {stages.map((stage, i) => (
               <PipelineNode key={stage.step} {...stage} index={i} />
@@ -79,17 +86,18 @@ export default function EscrowPipeline() {
         </div>
       </div>
 
-      {/* ─── Mobile: vertical continuous line passing through all cards ─── */}
+      {/* ─── Mobile: vertical continuous line ─── */}
       <div className="md:hidden">
         <div className="relative">
-          {/* The continuous vertical line — sits at horizontal center */}
-          <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[2px] z-0">
-            <div className="absolute inset-0 bg-border rounded-full" />
-            <div className="absolute inset-0 bg-accent/20 blur-[4px] rounded-full" />
-            <div className="absolute left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-accent shadow-[0_0_10px_3px_rgba(0,105,224,0.8),0_0_20px_6px_rgba(71,157,255,0.4)] animate-travel-full-v" />
+          {/* Line — inset to start/end at card centers */}
+          <div className="absolute top-[50px] bottom-[50px] left-1/2 -translate-x-1/2 w-[2px] z-0 overflow-hidden rounded-full">
+            <div className="absolute inset-0 bg-border" />
+            <div className="absolute inset-0 bg-accent/15 blur-[3px]" />
+            <div className="absolute left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-accent shadow-[0_0_8px_3px_rgba(0,105,224,0.7),0_0_18px_6px_rgba(71,157,255,0.35)] animate-travel-full-v" />
+            <div className="absolute left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-accent shadow-[0_0_8px_3px_rgba(0,105,224,0.7),0_0_18px_6px_rgba(71,157,255,0.35)] animate-travel-full-v-delayed" />
           </div>
 
-          {/* Nodes column */}
+          {/* Nodes */}
           <div className="relative z-10 flex flex-col items-center gap-10">
             {stages.map((stage, i) => (
               <PipelineNode key={stage.step} {...stage} index={i} />
@@ -98,7 +106,7 @@ export default function EscrowPipeline() {
         </div>
       </div>
 
-      {/* Safety Branch — "What if something goes wrong?" */}
+      {/* Safety Branch */}
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}

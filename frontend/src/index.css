@@ -139,21 +139,31 @@ body {
 
 /* ─── Pipeline Traveling Orb ──────────────────────────────────────────── */
 @keyframes travel-full {
-  0% { left: -8px; }
-  100% { left: calc(100% - 8px); }
+  0% { left: 0; }
+  100% { left: 100%; }
 }
 
 @keyframes travel-full-v {
-  0% { top: -8px; }
-  100% { top: calc(100% - 8px); }
+  0% { top: 0; }
+  100% { top: 100%; }
 }
 
 .animate-travel-full {
-  animation: travel-full 3.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation: travel-full 6s linear infinite;
+}
+
+.animate-travel-full-delayed {
+  animation: travel-full 6s linear infinite;
+  animation-delay: -3s;
 }
 
 .animate-travel-full-v {
-  animation: travel-full-v 3.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation: travel-full-v 6s linear infinite;
+}
+
+.animate-travel-full-v-delayed {
+  animation: travel-full-v 6s linear infinite;
+  animation-delay: -3s;
 }
 
 /* ─── Reduced Motion ─────────────────────────────────────────────────── */
@@ -167,7 +177,9 @@ body {
   .orbit-pulse,
   .orbit-pulse-fast,
   .animate-travel-full,
-  .animate-travel-full-v {
+  .animate-travel-full-delayed,
+  .animate-travel-full-v,
+  .animate-travel-full-v-delayed {
     animation: none !important;
   }
 }
