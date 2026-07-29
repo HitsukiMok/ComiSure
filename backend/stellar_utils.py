@@ -17,17 +17,20 @@ WASM_PATH = os.path.join(BASE_DIR, "comi_sure.wasm")
 # On Linux/Docker, shell=True with a list silently drops all arguments.
 USE_SHELL = platform.system() == "Windows"
 
+# The identity name used for the deployer in the Stellar CLI keystore
+DEPLOYER_IDENTITY = "cloud_deployer"
+
 def _is_seed_phrase(value: str) -> bool:
     """Return True when the value looks like a Stellar mnemonic seed phrase."""
     words = value.strip().split()
     return len(words) >= 12
 
-def _run(cmd, env_vars=None, **kwargs):
-    """Cross-platform subprocess wrapper that handles the env and shell arguments correctly."""
+def _run(cmd, env_vars=None, input_data=None, **kwargs):
+    """Cross-platform subprocess wrapper."""
     env = os.environ.copy()
     if env_vars:
         env.update(env_vars)
-    return subprocess.run(cmd, capture_output=True, text=True, shell=USE_SHELL, env=env, **kwargs)
+    return subprocess.run(cmd, capture_output=True, text=True, shell=USE_SHELL, env=env, input=input_data, **kwargs)
 
 def get_deployer_address(version: str = None) -> str:
     """Derives the public G... address from either the env seed/secret or the local alias."""
@@ -38,7 +41,6 @@ def get_deployer_address(version: str = None) -> str:
                 raise ValueError("Decrypted key is empty")
                 
             if _is_seed_phrase(value):
-                # Stellar CLI can resolve a seed phrase directly and knows which HD path to use.
                 res = _run(["stellar", "keys", "public-key", "--hd-path", "0", value])
                 if res.returncode != 0:
                     raise Exception(f"Failed to derive deployer address from seed phrase: {res.stderr}")
@@ -52,16 +54,41 @@ def get_deployer_address(version: str = None) -> str:
             except Exception as exc:
                 raise Exception(f"Failed to derive deployer address from secret key: {exc}")
     except Exception as e:
-        # On local: fallback to the saved alias
-        res = _run(["stellar", "keys", "address", "backend_deployer"])
+        # Fallback to the saved CLI identity
+        res = _run(["stellar", "keys", "address", DEPLOYER_IDENTITY])
         if res.returncode != 0:
-            raise Exception(f"Failed to get deployer address: {res.stderr} (Decryption failure: {e})")
+            # Try legacy name
+            res = _run(["stellar", "keys", "address", "backend_deployer"])
+            if res.returncode != 0:
+                raise Exception(f"Failed to get deployer address: {res.stderr} (Original error: {e})")
         return res.stdout.strip()
 
 def setup_cloud_deployer():
-    """Validates that the cloud deployer can be resolved on startup."""
+    """
+    Register the deployer secret key as a named identity in the Stellar CLI keystore.
+    This runs once at application startup. After this, all CLI commands can use
+    --source cloud_deployer and the CLI handles signing internally.
+    """
     version = os.getenv("DEPLOYER_SECRET_KEY_VERSION", "v1")
     try:
+        with get_decrypted_key(version) as dec_key:
+            secret_str = dec_key.decode('utf-8').strip()
+            
+            # Add the key as a named identity (pipe it via stdin)
+            # stellar keys add <name> --secret-key reads the key from stdin
+            add_res = _run(
+                ["stellar", "keys", "add", DEPLOYER_IDENTITY, "--secret-key", "--overwrite"],
+                input_data=secret_str + "\n"
+            )
+            if add_res.returncode != 0:
+                # Some CLI versions use different flags, try alternative
+                add_res = _run(
+                    ["stellar", "keys", "add", DEPLOYER_IDENTITY, "--secret-key"],
+                    input_data=secret_str + "\n"
+                )
+                if add_res.returncode != 0:
+                    logger.warning(f"Failed to register CLI identity: {add_res.stderr}")
+                    
         addr = get_deployer_address(version)
         print(f"☁️ Cloud Deployer ready! Public address: {addr} (version: {version})")
     except Exception as e:
@@ -73,24 +100,7 @@ def deploy_and_initialize_escrow(client_address: str, artist_address: str, versi
     and initializes it with the given participants and deadline.
     """
     admin_address = get_deployer_address(version)
-    env_vars = {}
-    has_secret = False
-    
-    try:
-        with get_decrypted_key(version) as dec_key:
-            if len(dec_key) > 0:
-                has_secret = True
-    except Exception:
-        pass
-
-    if has_secret:
-        with get_decrypted_key(version) as dec_key:
-            secret_str = dec_key.decode('utf-8').strip()
-            source_arg = admin_address
-            sign_args = ["--sign-with-key", secret_str]
-    else:
-        source_arg = "backend_deployer"
-        sign_args = []
+    source_arg = DEPLOYER_IDENTITY
 
     print(f"Deploying new contract for Client: {client_address} & Artist: {artist_address} ...")
     
@@ -100,11 +110,10 @@ def deploy_and_initialize_escrow(client_address: str, artist_address: str, versi
         "--wasm", WASM_PATH,
         "--source", source_arg,
         "--network", NETWORK
-    ] + sign_args
+    ]
     deploy_res = _run(deploy_cmd)
     
     if deploy_res.returncode != 0:
-        # Redact the secret env vars if they could be leaked in output (should not, but safety first)
         raise Exception(f"Deployment failed: {deploy_res.stderr} \n {deploy_res.stdout}")
     
     contract_id = deploy_res.stdout.strip()
@@ -128,7 +137,6 @@ def deploy_and_initialize_escrow(client_address: str, artist_address: str, versi
         "--id", contract_id,
         "--source", source_arg,
         "--network", NETWORK,
-    ] + sign_args + [
         "--", "initialize",
         "--client", client_address,
         "--artist", artist_address,
@@ -146,34 +154,16 @@ def deploy_and_initialize_escrow(client_address: str, artist_address: str, versi
 
 def perform_admin_action(contract_id: str, action: str, version: str = None):
     """
-    Executes 'admin_refund' or 'admin_force_release' on-chain using the backend_deployer identity.
+    Executes 'admin_refund' or 'admin_force_release' on-chain using the deployer identity.
     """
     admin_address = get_deployer_address(version)
-    env_vars = {}
-    has_secret = False
-    
-    try:
-        with get_decrypted_key(version) as dec_key:
-            if len(dec_key) > 0:
-                has_secret = True
-    except Exception:
-        pass
-        
-    if has_secret:
-        with get_decrypted_key(version) as dec_key:
-            secret_str = dec_key.decode('utf-8').strip()
-            source_arg = admin_address
-            sign_args = ["--sign-with-key", secret_str]
-    else:
-        source_arg = "backend_deployer"
-        sign_args = []
+    source_arg = DEPLOYER_IDENTITY
 
     cmd = [
         "stellar", "contract", "invoke",
         "--id", contract_id,
         "--source", source_arg,
         "--network", NETWORK,
-    ] + sign_args + [
         "--", action,
         "--caller", admin_address
     ]
