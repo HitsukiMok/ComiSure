@@ -26,59 +26,6 @@ const bounceIn = {
   }),
 };
 
-// Line connector grows in from the left after node appears
-const lineVariant = {
-  hidden: { opacity: 0, scaleX: 0 },
-  visible: (i) => ({
-    opacity: 1,
-    scaleX: 1,
-    transition: {
-      type: 'spring',
-      stiffness: 200,
-      damping: 22,
-      delay: i * 0.18 + 0.1,
-    },
-  }),
-};
-
-function ConnectorLine({ index }) {
-  return (
-    <motion.div
-      custom={index}
-      variants={lineVariant}
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true }}
-      className="hidden md:flex items-center w-16 mx-0 origin-left self-center"
-    >
-      <div className="h-[2px] w-full rounded-full relative overflow-hidden bg-border">
-        {/* Static glow behind */}
-        <div className="absolute inset-0 h-[2px] rounded-full bg-accent/30 blur-[3px]" />
-        {/* Traveling orb */}
-        <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-accent shadow-[0_0_8px_2px_rgba(0,105,224,0.7),0_0_16px_4px_rgba(71,157,255,0.4)] animate-travel-h" />
-      </div>
-    </motion.div>
-  );
-}
-
-function ConnectorLineVertical({ index }) {
-  return (
-    <motion.div
-      custom={index}
-      variants={lineVariant}
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true }}
-      className="md:hidden w-[2px] h-10 my-0 origin-top mx-auto relative overflow-hidden bg-border rounded-full self-center"
-    >
-      {/* Static glow */}
-      <div className="absolute inset-0 w-[2px] rounded-full bg-accent/30 blur-[3px]" />
-      {/* Traveling orb */}
-      <div className="absolute left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-accent shadow-[0_0_8px_2px_rgba(0,105,224,0.7),0_0_16px_4px_rgba(71,157,255,0.4)] animate-travel-v" />
-    </motion.div>
-  );
-}
-
 function PipelineNode({ step, label, desc, icon: Icon, index }) {
   return (
     <motion.div
@@ -87,7 +34,7 @@ function PipelineNode({ step, label, desc, icon: Icon, index }) {
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true, margin: '-50px' }}
-      className="flex flex-col items-center text-center"
+      className="flex flex-col items-center text-center relative z-10"
     >
       <div className="relative">
         <span className="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-action text-action-text text-xs flex items-center justify-center font-medium z-10">
@@ -110,19 +57,45 @@ function PipelineNode({ step, label, desc, icon: Icon, index }) {
 export default function EscrowPipeline() {
   return (
     <section className="w-full">
-      {/* Main Pipeline */}
-      <div className="flex flex-col md:flex-row md:items-center justify-center gap-0">
-        {stages.map((stage, i) => (
-          <React.Fragment key={stage.step}>
-            <PipelineNode {...stage} index={i} />
-            {i < stages.length - 1 && (
-              <>
-                <ConnectorLine index={i} />
-                <ConnectorLineVertical index={i} />
-              </>
-            )}
-          </React.Fragment>
-        ))}
+      {/* ─── Desktop: continuous line passing through all cards ─── */}
+      <div className="hidden md:block">
+        <div className="relative">
+          {/* The continuous line — sits at vertical center of the cards (50px from top of 100px cards) */}
+          <div className="absolute top-[50px] left-0 right-0 h-[2px] z-0">
+            {/* Base line */}
+            <div className="absolute inset-0 bg-border rounded-full" />
+            {/* Glow behind */}
+            <div className="absolute inset-0 bg-accent/20 blur-[4px] rounded-full" />
+            {/* Traveling orb — continuous across entire width */}
+            <div className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-accent shadow-[0_0_10px_3px_rgba(0,105,224,0.8),0_0_20px_6px_rgba(71,157,255,0.4)] animate-travel-full" />
+          </div>
+
+          {/* Nodes row */}
+          <div className="relative z-10 flex items-start justify-between">
+            {stages.map((stage, i) => (
+              <PipelineNode key={stage.step} {...stage} index={i} />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Mobile: vertical continuous line passing through all cards ─── */}
+      <div className="md:hidden">
+        <div className="relative">
+          {/* The continuous vertical line — sits at horizontal center */}
+          <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[2px] z-0">
+            <div className="absolute inset-0 bg-border rounded-full" />
+            <div className="absolute inset-0 bg-accent/20 blur-[4px] rounded-full" />
+            <div className="absolute left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-accent shadow-[0_0_10px_3px_rgba(0,105,224,0.8),0_0_20px_6px_rgba(71,157,255,0.4)] animate-travel-full-v" />
+          </div>
+
+          {/* Nodes column */}
+          <div className="relative z-10 flex flex-col items-center gap-10">
+            {stages.map((stage, i) => (
+              <PipelineNode key={stage.step} {...stage} index={i} />
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Safety Branch — "What if something goes wrong?" */}
@@ -138,7 +111,6 @@ export default function EscrowPipeline() {
         </h3>
 
         <div className="flex flex-col md:flex-row items-center justify-center gap-8">
-          {/* Deadline Expires */}
           <motion.div
             whileHover={{ y: -4, scale: 1.03 }}
             transition={{ type: 'spring', stiffness: 400, damping: 15 }}
@@ -154,7 +126,6 @@ export default function EscrowPipeline() {
           <span className="text-fog text-lg hidden md:block">—</span>
           <span className="text-fog text-sm md:hidden">—</span>
 
-          {/* Admin Resolves */}
           <motion.div
             whileHover={{ y: -4, scale: 1.03 }}
             transition={{ type: 'spring', stiffness: 400, damping: 15 }}
