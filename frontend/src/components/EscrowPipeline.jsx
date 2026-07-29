@@ -49,13 +49,13 @@ function ConnectorLine({ index }) {
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true }}
-      className="hidden md:block w-12 mx-2 origin-left"
+      className="hidden md:flex items-center w-16 mx-0 origin-left self-center"
     >
-      <div className="h-[2px] w-full rounded-full bg-border relative overflow-visible">
-        {/* Glow layer */}
-        <div className="absolute inset-0 h-[2px] rounded-full bg-accent/60 blur-[4px]" />
-        {/* Solid line */}
-        <div className="absolute inset-0 h-[2px] rounded-full bg-accent/80" />
+      <div className="h-[2px] w-full rounded-full relative overflow-hidden bg-border">
+        {/* Static glow behind */}
+        <div className="absolute inset-0 h-[2px] rounded-full bg-accent/30 blur-[3px]" />
+        {/* Traveling orb */}
+        <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-accent shadow-[0_0_8px_2px_rgba(0,105,224,0.7),0_0_16px_4px_rgba(71,157,255,0.4)] animate-travel-h" />
       </div>
     </motion.div>
   );
@@ -69,12 +69,12 @@ function ConnectorLineVertical({ index }) {
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true }}
-      className="md:hidden w-[2px] h-8 my-2 origin-top mx-auto"
+      className="md:hidden w-[2px] h-10 my-0 origin-top mx-auto relative overflow-hidden bg-border rounded-full self-center"
     >
-      <div className="w-[2px] h-full rounded-full bg-border relative overflow-visible">
-        <div className="absolute inset-0 w-[2px] rounded-full bg-accent/60 blur-[4px]" />
-        <div className="absolute inset-0 w-[2px] rounded-full bg-accent/80" />
-      </div>
+      {/* Static glow */}
+      <div className="absolute inset-0 w-[2px] rounded-full bg-accent/30 blur-[3px]" />
+      {/* Traveling orb */}
+      <div className="absolute left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-accent shadow-[0_0_8px_2px_rgba(0,105,224,0.7),0_0_16px_4px_rgba(71,157,255,0.4)] animate-travel-v" />
     </motion.div>
   );
 }
@@ -111,7 +111,7 @@ export default function EscrowPipeline() {
   return (
     <section className="w-full">
       {/* Main Pipeline */}
-      <div className="flex flex-col md:flex-row items-center justify-center gap-0">
+      <div className="flex flex-col md:flex-row md:items-center justify-center gap-0">
         {stages.map((stage, i) => (
           <React.Fragment key={stage.step}>
             <PipelineNode {...stage} index={i} />
