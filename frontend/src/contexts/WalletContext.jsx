@@ -45,13 +45,25 @@ export const WalletProvider = ({ children }) => {
       const challenge = challengeRes.data.challenge;
 
       // 2. Sign the challenge with the wallet
-      const { signedMessage } = await StellarWalletsKit.signMessage(challenge);
+      let signature;
+      try {
+        const result = await StellarWalletsKit.signMessage(challenge, {
+          address: walletAddress,
+        });
+        signature = result.signedMessage;
+      } catch (signError) {
+        console.warn('signMessage not supported, trying signTransaction fallback:', signError);
+        // If signMessage is not supported, skip backend auth
+        // User can still browse but won't be able to create commissions
+        setAuthError('Wallet does not support message signing. Some features may be limited.');
+        return false;
+      }
 
       // 3. Login with signed challenge
       const loginRes = await api.post('/auth/login', {
         wallet_address: walletAddress,
         challenge: challenge,
-        signature: signedMessage,
+        signature: signature,
         role: 'client',
       });
 
@@ -62,8 +74,8 @@ export const WalletProvider = ({ children }) => {
       return true;
     } catch (error) {
       console.error('Backend authentication failed:', error);
-      setAuthError('Authentication failed. You can still browse but cannot create commissions.');
-      // Still allow wallet connection even if backend auth fails
+      const detail = error?.response?.data?.detail || 'Authentication failed. Please try reconnecting.';
+      setAuthError(detail);
       return false;
     }
   }, []);
