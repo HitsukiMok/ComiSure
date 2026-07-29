@@ -190,6 +190,7 @@ export default function Dashboard() {
 // ─── Create Commission View ───────────────────────────────────────────────────
 function CreateCommissionView({ address, onCancel, onSuccess }) {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -201,6 +202,7 @@ function CreateCommissionView({ address, onCancel, onSuccess }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
     try {
       const payload = {
         title: formData.title,
@@ -213,7 +215,7 @@ function CreateCommissionView({ address, onCancel, onSuccess }) {
       const newCommission = await commissionService.create(payload);
       onSuccess(newCommission);
     } catch (e) {
-      alert("Failed to create and deploy contract: " + friendlyContractError(e, { actorLabel: 'The backend deployer' }));
+      setError(friendlyContractError(e, { actorLabel: 'The backend deployer' }));
     } finally {
       setLoading(false);
     }
@@ -225,6 +227,13 @@ function CreateCommissionView({ address, onCancel, onSuccess }) {
       <p className="text-sm text-graphite mb-8">
         The backend will deploy and initialize a unique Soroban Smart Contract for this commission. This may take up to 15 seconds.
       </p>
+
+      {error && (
+        <div className="mb-6 p-4 rounded-card-sm bg-status-refunded border border-border">
+          <p className="text-sm font-medium text-ink mb-1">Deployment failed</p>
+          <p className="text-xs text-graphite">{error}</p>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
