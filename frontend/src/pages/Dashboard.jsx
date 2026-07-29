@@ -48,7 +48,7 @@ function TxToast({ tx, onClose }) {
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 export default function Dashboard() {
-  const { address } = useWallet();
+  const { address, authError } = useWallet();
   const [commissions, setCommissions] = useState([]);
   const [loadingCommissions, setLoadingCommissions] = useState(true);
 
@@ -106,6 +106,13 @@ export default function Dashboard() {
           </button>
         )}
       </div>
+
+      {authError && (
+        <div className="mb-6 p-4 rounded-card-sm bg-status-expired border border-border overflow-hidden">
+          <p className="text-sm font-medium text-ink mb-1">Authentication Issue</p>
+          <p className="text-xs text-graphite break-words">{authError}</p>
+        </div>
+      )}
 
       <AnimatePresence mode="wait">
         {activeView === 'list' && (

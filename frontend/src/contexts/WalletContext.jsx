@@ -12,7 +12,6 @@ const TOKEN_KEY = 'comisure-auth-token';
 
 export const WalletProvider = ({ children }) => {
   const [address, setAddress] = useState(null);
-  const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY));
   const [isConnecting, setIsConnecting] = useState(false);
   const [showConsent, setShowConsent] = useState(false);
   const [authError, setAuthError] = useState(null);
@@ -24,42 +23,34 @@ export const WalletProvider = ({ children }) => {
     });
   }, []);
 
-  // Attach JWT token to all API requests
-  useEffect(() => {
-    const interceptor = api.interceptors.request.use((config) => {
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
-    });
-    return () => api.interceptors.request.eject(interceptor);
-  }, [token]);
-
   // Authenticate with backend after wallet connect
   const authenticateWithBackend = useCallback(async (walletAddress) => {
     try {
-      // 1. Get challenge from backend
+      console.log('[Auth] Starting authentication for:', walletAddress);
+
+      // 1. Get challenge
       const challengeRes = await api.get('/auth/challenge', {
         params: { wallet_address: walletAddress },
       });
       const challenge = challengeRes.data.challenge;
+      console.log('[Auth] Got challenge:', challenge.slice(0, 30) + '...');
 
-      // 2. Sign the challenge with the wallet
+      // 2. Sign the challenge
       let signature;
       try {
         const result = await StellarWalletsKit.signMessage(challenge, {
           address: walletAddress,
+          networkPassphrase: Networks.TESTNET,
         });
         signature = result.signedMessage;
+        console.log('[Auth] Message signed successfully');
       } catch (signError) {
-        console.warn('signMessage not supported, trying signTransaction fallback:', signError);
-        // If signMessage is not supported, skip backend auth
-        // User can still browse but won't be able to create commissions
-        setAuthError('Wallet does not support message signing. Some features may be limited.');
+        console.error('[Auth] signMessage failed:', signError);
+        setAuthError('Wallet does not support message signing. Please use Freighter v5+.');
         return false;
       }
 
-      // 3. Login with signed challenge
+      // 3. Login
       const loginRes = await api.post('/auth/login', {
         wallet_address: walletAddress,
         challenge: challenge,
@@ -68,13 +59,13 @@ export const WalletProvider = ({ children }) => {
       });
 
       const accessToken = loginRes.data.access_token;
-      setToken(accessToken);
       localStorage.setItem(TOKEN_KEY, accessToken);
+      console.log('[Auth] Login successful, token stored');
       setAuthError(null);
       return true;
     } catch (error) {
-      console.error('Backend authentication failed:', error);
-      const detail = error?.response?.data?.detail || 'Authentication failed. Please try reconnecting.';
+      console.error('[Auth] Authentication failed:', error?.response?.data || error);
+      const detail = error?.response?.data?.detail || 'Authentication failed. Please try reconnecting your wallet.';
       setAuthError(detail);
       return false;
     }
@@ -87,20 +78,19 @@ export const WalletProvider = ({ children }) => {
       setShowConsent(false);
       setAuthError(null);
 
-      // Connect wallet via Stellar Wallets Kit
       const res = await StellarWalletsKit.authModal();
+      console.log('[Wallet] Connected:', res.address);
       setAddress(res.address);
 
       // Authenticate with backend
       await authenticateWithBackend(res.address);
     } catch (error) {
-      console.error('Error connecting wallet:', error);
+      console.error('[Wallet] Connection error:', error);
     } finally {
       setIsConnecting(false);
     }
   }, [authenticateWithBackend]);
 
-  // Show consent modal first
   const requestConnect = useCallback(() => {
     setShowConsent(true);
   }, []);
@@ -111,7 +101,6 @@ export const WalletProvider = ({ children }) => {
 
   const disconnectWallet = async () => {
     setAddress(null);
-    setToken(null);
     setAuthError(null);
     localStorage.removeItem(TOKEN_KEY);
     try {
@@ -124,7 +113,6 @@ export const WalletProvider = ({ children }) => {
   return (
     <WalletContext.Provider value={{
       address,
-      token,
       authError,
       kit: StellarWalletsKit,
       connectWallet,
