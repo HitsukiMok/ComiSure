@@ -219,7 +219,11 @@ def create_contract(
         db_commission.contract_id = contract_id
     except Exception as e:
         logger.error(f"Contract deployment failed: {e}")
-        raise HTTPException(status_code=500, detail="Smart contract deployment failed. Please try again.")
+        error_detail = str(e)
+        # Redact any secret key that might leak in error messages
+        if error_detail and len(error_detail) > 500:
+            error_detail = error_detail[:500] + "..."
+        raise HTTPException(status_code=500, detail=f"Smart contract deployment failed: {error_detail}")
         
     session.add(db_commission)
     session.commit()
