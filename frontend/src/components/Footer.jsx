@@ -49,6 +49,7 @@ export default function Footer() {
             <ul className="space-y-2 text-graphite">
               <li><Link to="/terms" className="hover:text-ink transition-colors">Terms of Service</Link></li>
               <li><Link to="/privacy" className="hover:text-ink transition-colors">Privacy Policy</Link></li>
+              <li><a href="https://forms.gle/4f5tieNnnre5tjmR8" target="_blank" rel="noreferrer" className="hover:text-ink transition-colors">Feedback</a></li>
             </ul>
           </div>
         </div>
