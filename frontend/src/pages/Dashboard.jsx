@@ -222,7 +222,8 @@ function CreateCommissionView({ address, onCancel, onSuccess }) {
       const newCommission = await commissionService.create(payload);
       onSuccess(newCommission);
     } catch (e) {
-      setError(friendlyContractError(e, { actorLabel: 'The backend deployer' }));
+      const detail = e?.response?.data?.detail || friendlyContractError(e, { actorLabel: 'The backend deployer' });
+      setError(detail);
     } finally {
       setLoading(false);
     }
