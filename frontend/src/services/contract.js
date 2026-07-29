@@ -64,6 +64,14 @@ function friendlyContractError(error, context = {}) {
     return 'Only the admin wallet can perform this action.';
   }
 
+  if (lower.includes('deadline has not passed yet')) {
+    return 'The commission deadline has not expired yet. You cannot claim a refund until the deadline passes.';
+  }
+
+  if (lower.includes('only the client can claim an expired refund')) {
+    return 'Only the registered client wallet can claim an expired refund.';
+  }
+
   if (lower.includes('hosterror') || lower.includes('error(contract')) {
     return `On-chain contract error: ${raw}`;
   }
@@ -238,6 +246,33 @@ export async function adminForceRelease(contractId, adminAddress) {
     actorLabel: 'The admin wallet',
     operation: 'admin_force_release',
   });
+}
+
+/**
+ * Client claims a refund after the commission deadline has expired.
+ * Only callable by the registered client wallet after the on-chain deadline passes.
+ */
+export async function clientRefundExpired(contractId, callerAddress) {
+  const contract = new Contract(contractId);
+  const op = contract.call(
+    'client_refund_expired',
+    new Address(callerAddress).toScVal()
+  );
+  return invokeContract(callerAddress, op, {
+    actorLabel: 'The client wallet',
+    operation: 'client_refund_expired',
+  });
+}
+
+/**
+ * Read the deadline Unix timestamp from the contract (read-only, no signing).
+ * Returns a BigInt representing seconds since epoch.
+ */
+export async function getContractDeadline(contractId, callerAddress) {
+  const contract = new Contract(contractId);
+  const scVal = await simulateReadOnly(callerAddress, contract.call('get_deadline'));
+  if (!scVal) return 0n;
+  return BigInt(scValToNative(scVal));
 }
 
 export { friendlyContractError };

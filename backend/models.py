@@ -9,12 +9,14 @@ class CommissionBase(SQLModel):
     client_address: str = Field(index=True)
     artist_address: str = Field(index=True)
     status: str = Field(default="Pending") # Pending, Funded, Delivered, Released, Refunded, Disputed
+    deadline_days: int = Field(default=14) # 1–90 days until client can self-refund
 
 class Commission(CommissionBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     contract_id: Optional[str] = Field(default=None) # Set when contract deployment/initialization happens
     created_at: datetime = Field(default_factory=datetime.utcnow)
     deployer_key_version: Optional[str] = Field(default=None)
+    deadline_at: Optional[datetime] = Field(default=None) # Computed UTC datetime of the deadline
 
 class CommissionCreate(CommissionBase):
     pass
@@ -24,6 +26,7 @@ class CommissionRead(CommissionBase):
     contract_id: Optional[str]
     created_at: datetime
     deployer_key_version: Optional[str]
+    deadline_at: Optional[datetime]
 
 class CommissionUpdate(SQLModel):
     status: Optional[str] = None
