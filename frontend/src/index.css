@@ -30,15 +30,15 @@
 
 /* ─── Dark Theme Variables ────────────────────────────────────────────── */
 html.dark {
-  --color-canvas: #0a0d12;
-  --color-surface: #181d27;
-  --color-elevated: #1f2937;
+  --color-canvas: #202021;
+  --color-surface: #2a2a2b;
+  --color-elevated: #333334;
   --color-text-primary: #f9fafb;
   --color-text-secondary: #9ca3af;
   --color-text-muted: #6b7280;
   --color-border: #374151;
   --color-action: #ffffff;
-  --color-action-text: #0a0d12;
+  --color-action-text: #202021;
   --color-accent: #479dff;
   --color-accent-light: #93c5fd;
 
