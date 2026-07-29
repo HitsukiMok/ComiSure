@@ -1,31 +1,53 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Light Theme Variables (default) ────────────────────────────────── */
+/* ─── Light Theme Variables (default — Sky Tint Studio) ──────────────── */
 :root {
-  --color-background: #fdfbf7;
-  --color-surface: #ffffff;
-  --color-primary: #ec4899;
-  --color-accent: #6366f1;
-  --color-textmain: #0f172a;
-  --color-textmuted: #64748b;
-  --color-border: rgba(15, 23, 42, 0.12);
+  --color-canvas: #ebf5ff;
+  --color-surface: #fafdff;
+  --color-elevated: #ffffff;
+  --color-text-primary: #0a0d12;
+  --color-text-secondary: #535862;
+  --color-text-muted: #93979f;
+  --color-border: #e5e7eb;
+  --color-action: #181d27;
+  --color-action-text: #ffffff;
+  --color-accent: #0069e0;
+  --color-accent-light: #479dff;
+
+  /* Status pastels */
+  --color-status-pending: #f1e6ff;
+  --color-status-funded: #cce7ff;
+  --color-status-released: #d3f6e3;
+  --color-status-refunded: #ffd1b8;
+  --color-status-expired: #fff2be;
+
+  /* View transition origin */
   --tw-x: 50%;
   --tw-y: 50%;
 }
 
 /* ─── Dark Theme Variables ────────────────────────────────────────────── */
 html.dark {
-  --color-background: #0b1120;
-  --color-surface: #111827;
-  --color-primary: #f472b6;
-  --color-accent: #38bdf8;
-  --color-textmain: #fcfcfc;
-  --color-textmuted: #9ca3af;
-  --color-border: rgba(255, 255, 255, 0.1);
+  --color-canvas: #202021;
+  --color-surface: #2a2a2b;
+  --color-elevated: #333334;
+  --color-text-primary: #f9fafb;
+  --color-text-secondary: #9ca3af;
+  --color-text-muted: #6b7280;
+  --color-border: #374151;
+  --color-action: #ffffff;
+  --color-action-text: #202021;
+  --color-accent: #479dff;
+  --color-accent-light: #93c5fd;
+
+  /* Status — deeper tones for dark bg */
+  --color-status-pending: #2d1f4e;
+  --color-status-funded: #1a3a5c;
+  --color-status-released: #1a3d2a;
+  --color-status-refunded: #4a2a1a;
+  --color-status-expired: #3d3516;
 }
 
 /* ─── Base Reset ──────────────────────────────────────────────────────── */
@@ -34,30 +56,30 @@ html.dark {
 }
 
 body {
-  font-family: 'Inter', sans-serif;
-  background-color: var(--color-background);
-  color: var(--color-textmain);
+  font-family: 'Geist', 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: var(--color-canvas);
+  color: var(--color-text-primary);
   margin: 0;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* ─── View Transition – Circle Reveal (1 second) ─────────────────────── */
+/* ─── View Transition — Circle Reveal (1 second) ─────────────────────── */
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation: none;
   mix-blend-mode: normal;
 }
 
-/* The new snapshot expands as a circle from the click origin */
 ::view-transition-new(root) {
   z-index: 9999;
   clip-path: circle(0% at var(--tw-x) var(--tw-y));
   animation: circle-expand 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
-/* Keep the old snapshot fully visible beneath while new one expands */
 ::view-transition-old(root) {
   z-index: 1;
   animation: none;
@@ -68,7 +90,7 @@ body {
   to   { clip-path: circle(150% at var(--tw-x) var(--tw-y)); }
 }
 
-/* ─── Theme Icon Wiggle on Long Hover ────────────────────────────────── */
+/* ─── Theme Toggle Icon Wiggle ───────────────────────────────────────── */
 @keyframes wiggle {
   0%   { transform: rotate(0deg); }
   15%  { transform: rotate(-18deg); }
@@ -87,29 +109,181 @@ body {
 
 .theme-toggle-btn:hover .theme-toggle-icon {
   animation: wiggle 0.6s ease-in-out;
-  animation-delay: 0.5s; /* starts wiggling after half a second of hover */
+  animation-delay: 0.5s;
   animation-iteration-count: infinite;
 }
 
-/* ─── Glass Panel ─────────────────────────────────────────────────────── */
-/* Uses correct CSS variable, no broken rgba() / space-separated syntax */
-.glass-panel {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 1rem;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
-  transition: background-color 0.3s ease, border-color 0.3s ease;
+/* ─── Orbit Timer Pulse ──────────────────────────────────────────────── */
+@keyframes orbit-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }
 
-/* ─── Gradient Text ───────────────────────────────────────────────────── */
-.gradient-text {
-  background: linear-gradient(to right, var(--color-primary), var(--color-accent));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.orbit-pulse {
+  animation: orbit-pulse 2s ease-in-out infinite;
 }
 
-/* ─── Glow Effect ─────────────────────────────────────────────────────── */
-.text-glow {
-  text-shadow: 0 0 20px rgba(236, 72, 153, 0.5);
+.orbit-pulse-fast {
+  animation: orbit-pulse 1s ease-in-out infinite;
+}
+
+/* ─── Pipeline Dash Flow ─────────────────────────────────────────────── */
+@keyframes dash-flow {
+  from { stroke-dashoffset: 28; }
+  to   { stroke-dashoffset: 0; }
+}
+
+.animate-dash-flow {
+  animation: dash-flow 1.5s linear infinite;
+}
+
+/* ─── Pipeline Traveling Orb ──────────────────────────────────────────── */
+@keyframes travel-full {
+  0% { left: 0; }
+  100% { left: 100%; }
+}
+
+@keyframes travel-full-v {
+  0% { top: 0; }
+  100% { top: 100%; }
+}
+
+.animate-travel-full {
+  animation: travel-full 6s linear infinite;
+}
+
+.animate-travel-full-delayed {
+  animation: travel-full 6s linear infinite;
+  animation-delay: -3s;
+}
+
+.animate-travel-full-v {
+  animation: travel-full-v 6s linear infinite;
+}
+
+.animate-travel-full-v-delayed {
+  animation: travel-full-v 6s linear infinite;
+  animation-delay: -3s;
+}
+
+/* ─── Prose Styling for Legal Pages ──────────────────────────────────── */
+.prose-custom h1 {
+  font-size: 32px;
+  font-weight: 500;
+  letter-spacing: -0.64px;
+  line-height: 1.25;
+  color: var(--color-text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.prose-custom h2 {
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+  color: var(--color-text-primary);
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.prose-custom h3 {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.prose-custom p {
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+  margin-bottom: 0.75rem;
+}
+
+.prose-custom ul {
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+  padding-left: 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.prose-custom li {
+  margin-bottom: 0.35rem;
+}
+
+.prose-custom strong {
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+/* ─── Animated Background Gradient ────────────────────────────────────── */
+@keyframes gradient-drift {
+  0% { transform: translate(0%, 0%) scale(1); }
+  25% { transform: translate(5%, -8%) scale(1.05); }
+  50% { transform: translate(-3%, 5%) scale(0.98); }
+  75% { transform: translate(-6%, -3%) scale(1.03); }
+  100% { transform: translate(0%, 0%) scale(1); }
+}
+
+.bg-gradient-animate {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.bg-gradient-animate::before,
+.bg-gradient-animate::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.4;
+  animation: gradient-drift 18s ease-in-out infinite;
+}
+
+.bg-gradient-animate::before {
+  width: 60%;
+  height: 60%;
+  top: -10%;
+  left: -10%;
+  background: radial-gradient(circle, rgba(0, 105, 224, 0.3), transparent 70%);
+  animation-delay: 0s;
+}
+
+.bg-gradient-animate::after {
+  width: 50%;
+  height: 50%;
+  bottom: -10%;
+  right: -10%;
+  background: radial-gradient(circle, rgba(71, 157, 255, 0.2), transparent 70%);
+  animation-delay: -9s;
+}
+
+html.dark .bg-gradient-animate::before {
+  background: radial-gradient(circle, rgba(71, 157, 255, 0.12), transparent 70%);
+}
+
+html.dark .bg-gradient-animate::after {
+  background: radial-gradient(circle, rgba(147, 197, 253, 0.08), transparent 70%);
+}
+
+/* ─── Reduced Motion ─────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .animate-dash-flow,
+  .orbit-pulse,
+  .orbit-pulse-fast,
+  .animate-travel-full,
+  .animate-travel-full-delayed,
+  .animate-travel-full-v,
+  .animate-travel-full-v-delayed,
+  .bg-gradient-animate::before,
+  .bg-gradient-animate::after {
+    animation: none !important;
+  }
 }

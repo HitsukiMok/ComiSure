@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { StellarWalletsKit } from '@creit-tech/stellar-wallets-kit';
 import { defaultModules } from '@creit-tech/stellar-wallets-kit/modules/utils';
 import { Networks } from '@stellar/stellar-sdk';
@@ -10,18 +10,20 @@ export const useWallet = () => useContext(WalletContext);
 export const WalletProvider = ({ children }) => {
   const [address, setAddress] = useState(null);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [showConsent, setShowConsent] = useState(false);
 
   useEffect(() => {
-    // Initialize the Stellar Wallets Kit statically
     StellarWalletsKit.init({
-        network: Networks.TESTNET,
-        modules: defaultModules(),
+      network: Networks.TESTNET,
+      modules: defaultModules(),
     });
   }, []);
 
-  const connectWallet = async () => {
+  // Actually connect after consent is given
+  const connectWallet = useCallback(async () => {
     try {
       setIsConnecting(true);
+      setShowConsent(false);
       const res = await StellarWalletsKit.authModal();
       setAddress(res.address);
     } catch (error) {
@@ -29,19 +31,37 @@ export const WalletProvider = ({ children }) => {
     } finally {
       setIsConnecting(false);
     }
-  };
+  }, []);
+
+  // Show consent modal first — called by UI buttons
+  const requestConnect = useCallback(() => {
+    setShowConsent(true);
+  }, []);
+
+  const closeConsent = useCallback(() => {
+    setShowConsent(false);
+  }, []);
 
   const disconnectWallet = async () => {
     setAddress(null);
     try {
-        await StellarWalletsKit.disconnect();
-    } catch(e) {
-        console.error(e);
+      await StellarWalletsKit.disconnect();
+    } catch (e) {
+      console.error(e);
     }
   };
 
   return (
-    <WalletContext.Provider value={{ address, kit: StellarWalletsKit, connectWallet, disconnectWallet, isConnecting }}>
+    <WalletContext.Provider value={{
+      address,
+      kit: StellarWalletsKit,
+      connectWallet,
+      requestConnect,
+      showConsent,
+      closeConsent,
+      disconnectWallet,
+      isConnecting,
+    }}>
       {children}
     </WalletContext.Provider>
   );

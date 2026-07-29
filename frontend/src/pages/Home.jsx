@@ -1,132 +1,168 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ShieldCheck, Zap, Lock, RefreshCw, ArrowRight } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Zap, Lock, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import EscrowPipeline from '../components/EscrowPipeline';
+import Footer from '../components/Footer';
 
 const features = [
   {
-    icon: <Lock className="w-8 h-8 text-primary" />,
+    icon: Lock,
     title: 'Trustless Escrow',
-    desc: 'Funds are securely locked on-chain via Soroban smart contracts. No human intermediary can hold your money hostage.'
+    desc: 'Funds lock on-chain via Soroban smart contracts. No human intermediary holds your money.',
   },
   {
-    icon: <Zap className="w-8 h-8 text-accent" />,
-    title: 'Lightning Fast Settlements',
-    desc: 'Leveraging the Stellar network, artists receive their USDC within 5 seconds of client approval.'
+    icon: Zap,
+    title: '5-Second Settlements',
+    desc: 'The Stellar network settles payments within one ledger close. Artists get paid instantly.',
   },
   {
-    icon: <ShieldCheck className="w-8 h-8 text-green-400" />,
+    icon: ShieldCheck,
     title: 'Dispute Resolution',
-    desc: 'Off-chain admin reviews with on-chain guarantees limit fraud. Admins can force release or refund based on undeniable cryptographic proofs.'
+    desc: 'Off-chain admin reviews with on-chain guarantees. Disputes resolve fairly with cryptographic proof.',
   },
   {
-    icon: <RefreshCw className="w-8 h-8 text-pink-500" />,
-    title: 'Streamlined Progress',
-    desc: 'A dedicated off-chain dashboard for tracking milestones like sketches and final PSD deliveries.'
-  }
+    icon: RefreshCw,
+    title: 'Deadline Auto-Refund',
+    desc: 'Set a deadline on every commission. If the artist ghosts, claim your refund without admin help.',
+  },
 ];
 
 export default function Home() {
   return (
-    <div className="min-h-screen relative overflow-hidden">
-      {/* Background Decor */}
-      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-primary/20 blur-[120px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-accent/10 blur-[120px] rounded-full pointer-events-none" />
-
-      <main className="max-w-7xl mx-auto px-6 pt-24 pb-16 relative z-10 flex flex-col items-center">
-        
-        {/* Hero Section */}
-        <motion.div 
-          initial={{ opacity: 0, y: 30 }}
+    <div className="min-h-screen">
+      {/* ─── Hero Section ─────────────────────────────────────────────── */}
+      <section className="max-w-page mx-auto px-6 pt-24 pb-20 text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="text-center max-w-3xl"
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-textmain/5 border border-border text-sm font-medium mb-8">
-             <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-             Live on Stellar Network (Soroban)
-          </div>
-
-          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6">
-             Secure Art Commissions. <br/>
-             <span className="gradient-text animate-glow block mt-2">Guaranteed Code.</span>
-          </h1>
-
-          <p className="text-lg md:text-xl text-textmuted mb-10 leading-relaxed">
-             ComiSure utilizes the power of the <strong>Soroban SDK</strong> to protect freelancers and clients from fraud. Connect your Stellar wallet and commission your next masterpiece with absolute peace of mind.
+          {/* Subtitle — plain text, no container */}
+          <p className="text-base text-graphite font-medium mb-6">
+            Dev'ing Tech for Artists
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link 
-              to="/dashboard"
-              className="px-8 py-4 bg-primary hover:bg-primary/90 text-white rounded-full font-bold text-lg transition-transform hover:scale-105 shadow-[0_0_20px_rgba(236,72,153,0.5)] flex items-center gap-2"
-            >
-              Start Commissioning <ArrowRight className="w-5 h-5" />
-            </Link>
-            <a 
-              href="https://stellarwalletskit.dev" 
-              target="_blank" 
-              rel="noreferrer"
-              className="px-8 py-4 bg-surface hover:bg-surface/80 border border-border text-textmain rounded-full font-bold text-lg transition-colors flex items-center gap-2"
-            >
-              Get a Wallet
-            </a>
+          {/* Headline */}
+          <h1 className="text-display md:text-hero font-medium text-ink tracking-tight max-w-4xl mx-auto">
+            ComiSure
+          </h1>
+
+          {/* Subhead */}
+          <p className="mt-6 text-lg md:text-xl text-graphite max-w-2xl mx-auto leading-relaxed">
+            Locks USDC in a Soroban smart contract so artists always get paid and clients never get scammed.
+          </p>
+
+          {/* CTA */}
+          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <motion.div whileHover={{ y: -2, scale: 1.03 }} whileTap={{ scale: 0.97 }} transition={{ type: 'spring', stiffness: 400, damping: 15 }}>
+              <Link
+                to="/dashboard"
+                className="inline-flex items-center gap-2 px-8 py-3.5 bg-action text-action-text font-medium rounded-btn shadow-button text-base"
+              >
+                Start Commissioning <ArrowRight className="w-5 h-5" />
+              </Link>
+            </motion.div>
+            <motion.div whileHover={{ y: -2, scale: 1.03 }} whileTap={{ scale: 0.97 }} transition={{ type: 'spring', stiffness: 400, damping: 15 }}>
+              <a
+                href="https://freighter.app"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 px-8 py-3.5 bg-surface border border-border text-ink font-medium rounded-btn text-base"
+              >
+                Get a Wallet
+              </a>
+            </motion.div>
           </div>
         </motion.div>
+      </section>
 
-        {/* How it Works / Process */}
-        <motion.div 
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 0.2 }}
+      {/* ─── How It Works — Escrow Pipeline ───────────────────────────── */}
+      <section className="max-w-page mx-auto px-6 py-20">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 200, damping: 20 }}
           viewport={{ once: true }}
-          className="mt-32 w-full"
+          className="text-center mb-16"
         >
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">How It Works</h2>
-            <div className="w-24 h-1 bg-gradient-to-r from-primary to-accent mx-auto rounded-full" />
-          </div>
+          <h2 className="text-heading-lg font-medium text-ink tracking-tight">
+            How It Works
+          </h2>
+          <p className="mt-3 text-lg text-graphite">
+            From agreement to payment in five trustless steps.
+          </p>
+        </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {['1. Propose', '2. Lock Funds', '3. Deliver', '4. Approve'].map((step, i) => (
-               <div key={i} className="glass-panel p-8 text-center relative group">
-                 <div className="absolute inset-0 bg-gradient-to-b from-textmain/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
-                 <div className="text-5xl font-black text-textmain/5 mb-4 group-hover:text-primary/20 transition-colors">0{i+1}</div>
-                 <h3 className="text-xl font-bold text-textmain mb-2">{step}</h3>
-                 <p className="text-textmuted text-sm">
-                   {i === 0 && 'Client & Artist agree on the scope off-chain.'}
-                   {i === 1 && 'Client deposits USDC directly into the smart contract.'}
-                   {i === 2 && 'Artist uploads the WIPs and final files off-chain.'}
-                   {i === 3 && 'Client approves on-chain, instantly transferring funds.'}
-                 </p>
-               </div>
+        <EscrowPipeline />
+      </section>
+
+      {/* ─── Feature Tiles (Built for Trust) ──────────────────────────── */}
+      <section className="bg-surface py-20 -mx-0">
+        <div className="max-w-page mx-auto px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-heading-lg font-medium text-ink tracking-tight">
+              Built for Trust
+            </h2>
+            <p className="mt-3 text-lg text-graphite">
+              Every feature protects both the artist and the client.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {features.map((f, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 30, scale: 0.95 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                whileHover={{ y: -6, scale: 1.02 }}
+                transition={{ type: 'spring', stiffness: 260, damping: 20, delay: i * 0.1 }}
+                viewport={{ once: true }}
+                className="p-10 rounded-card bg-canvas border border-border cursor-default"
+              >
+                <f.icon className="w-8 h-8 text-accent mb-4" strokeWidth={1.5} />
+                <h3 className="text-heading font-medium text-ink tracking-tight mb-2">
+                  {f.title}
+                </h3>
+                <p className="text-base text-graphite leading-relaxed">
+                  {f.desc}
+                </p>
+              </motion.div>
             ))}
           </div>
-        </motion.div>
-
-        {/* Feature Highlights */}
-        <div className="mt-32 grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
-           {features.map((f, i) => (
-             <motion.div 
-               key={i}
-               initial={{ opacity: 0, y: 20 }}
-               whileInView={{ opacity: 1, y: 0 }}
-               transition={{ duration: 0.5, delay: i * 0.1 }}
-               viewport={{ once: true }}
-               className="flex items-start gap-6 p-6 rounded-2xl border border-border bg-textmain/5 hover:bg-textmain/10 transition-colors"
-             >
-                <div className="p-4 rounded-xl bg-surface/50 border border-border">
-                  {f.icon}
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold mb-2">{f.title}</h3>
-                  <p className="text-textmuted leading-relaxed">{f.desc}</p>
-                </div>
-             </motion.div>
-           ))}
         </div>
+      </section>
 
-      </main>
+      {/* ─── Stats Strip ──────────────────────────────────────────────── */}
+      <section className="max-w-page mx-auto px-6 py-16">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+          {[
+            { value: '5s', label: 'Settlement Time' },
+            { value: '<$0.001', label: 'Transaction Fee' },
+            { value: '100%', label: 'Goes to Artist' },
+            { value: '1:1', label: 'USDC Peg to USD' },
+          ].map((stat, i) => (
+            <motion.div
+              key={i}
+              whileHover={{ y: -3, scale: 1.03 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+              className="p-6 rounded-card bg-surface border border-border cursor-default"
+            >
+              <p className="text-heading font-medium text-accent tracking-tight">{stat.value}</p>
+              <p className="mt-1 text-sm text-fog">{stat.label}</p>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* ─── Footer ───────────────────────────────────────────────────── */}
+      <Footer />
     </div>
   );
 }
