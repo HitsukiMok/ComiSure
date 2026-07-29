@@ -77,6 +77,30 @@ def on_startup():
 def read_root(request: Request):
     return {"message": "Welcome to ComiSure Off-Chain API"}
 
+@app.get("/health")
+def health_check(request: Request, session: Session = Depends(get_session)):
+    """Production health check — verifies DB connectivity and deployer key resolution."""
+    checks = {"status": "healthy", "database": "ok", "deployer": "ok", "version": "1.1.0"}
+    
+    # Check database connectivity
+    try:
+        session.exec(select(Commission).limit(1))
+    except Exception as e:
+        checks["database"] = f"error: {str(e)[:100]}"
+        checks["status"] = "degraded"
+    
+    # Check deployer key can be resolved
+    try:
+        addr = stellar_utils.get_deployer_address()
+        checks["deployer_address"] = addr[:8] + "..."
+    except Exception as e:
+        checks["deployer"] = f"error: {str(e)[:100]}"
+        checks["status"] = "degraded"
+    
+    status_code = 200 if checks["status"] == "healthy" else 503
+    from fastapi.responses import JSONResponse
+    return JSONResponse(content=checks, status_code=status_code)
+
 # Challenge-Response Authentication
 @app.get("/auth/challenge")
 @limiter.limit("10/minute", key_func=get_remote_address)
