@@ -66,11 +66,11 @@ export default function EscrowPipeline() {
       <div className="hidden md:block">
         <div className="relative">
           {/* Line — inset so it starts/ends at card centers, not container edges */}
-          <div className="absolute top-[50px] left-[50px] right-[50px] h-[2px] z-0 overflow-hidden rounded-full">
+          <div className="absolute top-[50px] left-[50px] right-[50px] h-[2px] z-0 rounded-full">
             {/* Base line */}
-            <div className="absolute inset-0 bg-border" />
+            <div className="absolute inset-0 bg-border rounded-full" />
             {/* Subtle glow */}
-            <div className="absolute inset-0 bg-accent/15 blur-[3px]" />
+            <div className="absolute inset-0 bg-accent/15 blur-[3px] rounded-full" />
             {/* Orb 1 */}
             <GlowOrb className="animate-travel-full" />
             {/* Orb 2 — offset by half so there's always one visible */}
@@ -90,9 +90,9 @@ export default function EscrowPipeline() {
       <div className="md:hidden">
         <div className="relative">
           {/* Line — inset to start/end at card centers */}
-          <div className="absolute top-[50px] bottom-[50px] left-1/2 -translate-x-1/2 w-[2px] z-0 overflow-hidden rounded-full">
-            <div className="absolute inset-0 bg-border" />
-            <div className="absolute inset-0 bg-accent/15 blur-[3px]" />
+          <div className="absolute top-[50px] bottom-[50px] left-1/2 -translate-x-1/2 w-[2px] z-0 rounded-full">
+            <div className="absolute inset-0 bg-border rounded-full" />
+            <div className="absolute inset-0 bg-accent/15 blur-[3px] rounded-full" />
             <div className="absolute left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-accent shadow-[0_0_8px_3px_rgba(0,105,224,0.7),0_0_18px_6px_rgba(71,157,255,0.35)] animate-travel-full-v" />
             <div className="absolute left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-accent shadow-[0_0_8px_3px_rgba(0,105,224,0.7),0_0_18px_6px_rgba(71,157,255,0.35)] animate-travel-full-v-delayed" />
           </div>
