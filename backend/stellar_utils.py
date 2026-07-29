@@ -86,8 +86,9 @@ def deploy_and_initialize_escrow(client_address: str, artist_address: str, versi
     if has_secret:
         with get_decrypted_key(version) as dec_key:
             secret_str = dec_key.decode('utf-8').strip()
-            # In Stellar CLI v25+, pass the secret key directly as --source
-            source_arg = secret_str
+            # Use env var for signing, public address for --source
+            env_vars["STELLAR_SIGN_WITH_KEY"] = secret_str
+            source_arg = admin_address
     else:
         source_arg = "backend_deployer"
 
@@ -160,8 +161,8 @@ def perform_admin_action(contract_id: str, action: str, version: str = None):
     if has_secret:
         with get_decrypted_key(version) as dec_key:
             secret_str = dec_key.decode('utf-8').strip()
-            # In Stellar CLI v25+, pass the secret key directly as --source
-            source_arg = secret_str
+            env_vars["STELLAR_SIGN_WITH_KEY"] = secret_str
+            source_arg = admin_address
     else:
         source_arg = "backend_deployer"
 
