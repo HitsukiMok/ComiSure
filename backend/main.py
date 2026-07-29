@@ -16,7 +16,7 @@ from models import (
 )
 import stellar_utils
 from middleware.auth import (
-    JWTTokenMiddleware, CurrentUser, get_current_user,
+    JWTTokenMiddleware, CurrentUser, get_current_user, get_current_user_optional,
     require_admin, generate_challenge_message,
     parse_challenge_and_verify, verify_stellar_signature,
     create_access_token, is_admin_wallet, ROLE_CLIENT, ROLE_ARTIST, ROLE_ADMIN
@@ -165,7 +165,7 @@ def create_contract(
     commission: CommissionCreate, 
     request: Request,
     session: Session = Depends(get_session),
-    current_user: CurrentUser = Depends(get_current_user)
+    current_user: Optional[CurrentUser] = Depends(get_current_user_optional)
 ):
     # Input sanitization
     clean_title = clean_input_string(commission.title, "title")
@@ -190,7 +190,7 @@ def create_contract(
         raise HTTPException(status_code=400, detail="Deadline must be between 1 and 90 days.")
         
     # Enforce authorization: request client address must match current user wallet address
-    if current_user.role != ROLE_ADMIN and commission.client_address != current_user.wallet_address:
+    if current_user and current_user.role != ROLE_ADMIN and commission.client_address != current_user.wallet_address:
         raise HTTPException(
             status_code=403, 
             detail="Forbidden: Client address in contract does not match authenticated user."
@@ -232,22 +232,27 @@ def read_contracts(
     client_address: str = None, 
     artist_address: str = None, 
     session: Session = Depends(get_session),
-    current_user: CurrentUser = Depends(get_current_user)
+    current_user: Optional[CurrentUser] = Depends(get_current_user_optional)
 ):
     query = select(Commission)
     
-    # Role-based filtering
-    if current_user.role == ROLE_ADMIN:
+    # Role-based filtering (if authenticated)
+    if current_user:
+        if current_user.role == ROLE_ADMIN:
+            if client_address:
+                query = query.where(Commission.client_address == client_address)
+            if artist_address:
+                query = query.where(Commission.artist_address == artist_address)
+        elif current_user.role == ROLE_CLIENT:
+            query = query.where(Commission.client_address == current_user.wallet_address)
+        elif current_user.role == ROLE_ARTIST:
+            query = query.where(Commission.artist_address == current_user.wallet_address)
+    else:
+        # Unauthenticated: filter by provided params
         if client_address:
             query = query.where(Commission.client_address == client_address)
         if artist_address:
             query = query.where(Commission.artist_address == artist_address)
-    elif current_user.role == ROLE_CLIENT:
-        query = query.where(Commission.client_address == current_user.wallet_address)
-    elif current_user.role == ROLE_ARTIST:
-        query = query.where(Commission.artist_address == current_user.wallet_address)
-    else:
-        raise HTTPException(status_code=403, detail="Invalid role context.")
         
     commissions = session.exec(query).all()
     return commissions
@@ -257,14 +262,15 @@ def read_contract(
     contract_id: int, 
     request: Request,
     session: Session = Depends(get_session),
-    current_user: CurrentUser = Depends(get_current_user)
+    current_user: Optional[CurrentUser] = Depends(get_current_user_optional)
 ):
     commission = session.get(Commission, contract_id)
     if not commission:
         raise HTTPException(status_code=404, detail="Contract not found")
         
     # Access check: admin or participant only
-    if current_user.role != ROLE_ADMIN:
+    # Access check: admin or participant only (if authenticated)
+    if current_user and current_user.role != ROLE_ADMIN:
         if commission.client_address != current_user.wallet_address and commission.artist_address != current_user.wallet_address:
             raise HTTPException(status_code=403, detail="Access denied.")
             
@@ -275,16 +281,16 @@ def release_contract(
     contract_id: int,
     request: Request,
     session: Session = Depends(get_session),
-    current_user: CurrentUser = Depends(get_current_user)
+    current_user: Optional[CurrentUser] = Depends(get_current_user_optional)
 ):
     db_commission = session.get(Commission, contract_id)
     if not db_commission:
         raise HTTPException(status_code=404, detail="Contract not found")
         
-    is_client_owner = db_commission.client_address == current_user.wallet_address
-    is_admin = current_user.role == ROLE_ADMIN
+    is_client_owner = current_user and db_commission.client_address == current_user.wallet_address
+    is_admin = current_user and current_user.role == ROLE_ADMIN
     
-    if not (is_client_owner or is_admin):
+    if current_user and not (is_client_owner or is_admin):
         raise HTTPException(status_code=403, detail="Only the client owner or admin can release this contract.")
         
     if db_commission.status == "Released":
@@ -366,7 +372,7 @@ def client_refund_expired(
     contract_id: int,
     request: Request,
     session: Session = Depends(get_session),
-    current_user: CurrentUser = Depends(get_current_user)
+    current_user: Optional[CurrentUser] = Depends(get_current_user_optional)
 ):
     """
     Syncs off-chain status after the client has submitted client_refund_expired on-chain.
@@ -377,8 +383,8 @@ def client_refund_expired(
     if not db_commission or not db_commission.contract_id:
         raise HTTPException(status_code=404, detail="Valid commission contract not found")
 
-    # Only the client can trigger this
-    if db_commission.client_address != current_user.wallet_address:
+    # Only the client can trigger this (if authenticated)
+    if current_user and db_commission.client_address != current_user.wallet_address:
         raise HTTPException(status_code=403, detail="Only the client can claim an expired refund.")
 
     # Check deadline in the database first (fast fail before querying on-chain)

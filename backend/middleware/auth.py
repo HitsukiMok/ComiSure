@@ -156,6 +156,10 @@ def get_current_user(request: Request) -> CurrentUser:
         )
     return user
 
+def get_current_user_optional(request: Request) -> Optional[CurrentUser]:
+    """FastAPI dependency that returns user if authenticated, None otherwise."""
+    return getattr(request.state, "user", None)
+
 def require_role(allowed_roles: list[str]):
     """FastAPI dependency factory to enforce specific roles."""
     def dependency(user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
