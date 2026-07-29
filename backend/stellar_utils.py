@@ -86,11 +86,11 @@ def deploy_and_initialize_escrow(client_address: str, artist_address: str, versi
     if has_secret:
         with get_decrypted_key(version) as dec_key:
             secret_str = dec_key.decode('utf-8').strip()
-            # Use env var for signing, public address for --source
-            env_vars["STELLAR_SIGN_WITH_KEY"] = secret_str
             source_arg = admin_address
+            sign_args = ["--sign-with-key", secret_str]
     else:
         source_arg = "backend_deployer"
+        sign_args = []
 
     print(f"Deploying new contract for Client: {client_address} & Artist: {artist_address} ...")
     
@@ -100,8 +100,8 @@ def deploy_and_initialize_escrow(client_address: str, artist_address: str, versi
         "--wasm", WASM_PATH,
         "--source", source_arg,
         "--network", NETWORK
-    ]
-    deploy_res = _run(deploy_cmd, env_vars=env_vars)
+    ] + sign_args
+    deploy_res = _run(deploy_cmd)
     
     if deploy_res.returncode != 0:
         # Redact the secret env vars if they could be leaked in output (should not, but safety first)
@@ -128,6 +128,7 @@ def deploy_and_initialize_escrow(client_address: str, artist_address: str, versi
         "--id", contract_id,
         "--source", source_arg,
         "--network", NETWORK,
+    ] + sign_args + [
         "--", "initialize",
         "--client", client_address,
         "--artist", artist_address,
@@ -136,7 +137,7 @@ def deploy_and_initialize_escrow(client_address: str, artist_address: str, versi
         "--deadline", str(deadline_unix)
     ]
     
-    init_res = _run(init_cmd, env_vars=env_vars)
+    init_res = _run(init_cmd)
     if init_res.returncode != 0:
         raise Exception(f"Initialization failed: {init_res.stderr} \n {init_res.stdout}")
 
@@ -161,20 +162,22 @@ def perform_admin_action(contract_id: str, action: str, version: str = None):
     if has_secret:
         with get_decrypted_key(version) as dec_key:
             secret_str = dec_key.decode('utf-8').strip()
-            env_vars["STELLAR_SIGN_WITH_KEY"] = secret_str
             source_arg = admin_address
+            sign_args = ["--sign-with-key", secret_str]
     else:
         source_arg = "backend_deployer"
+        sign_args = []
 
     cmd = [
         "stellar", "contract", "invoke",
         "--id", contract_id,
         "--source", source_arg,
         "--network", NETWORK,
+    ] + sign_args + [
         "--", action,
         "--caller", admin_address
     ]
-    res = _run(cmd, env_vars=env_vars)
+    res = _run(cmd)
     if res.returncode != 0:
         raise Exception(f"Admin action '{action}' failed: {res.stderr}\n{res.stdout}")
     
