@@ -9,27 +9,10 @@ import {
   friendlyContractError,
 } from '../services/contract';
 import { commissionService } from '../services/api';
-import { ShieldCheck, Clock, CheckCircle2, XCircle, Loader2, ExternalLink, RefreshCw, Plus, ArrowLeft } from 'lucide-react';
-
-// ─── State Badge ─────────────────────────────────────────────────────────────
-const STATE_CONFIG = {
-  Pending:  { label: 'Pending Deposit',  color: 'bg-yellow-500/20 text-yellow-500',  icon: Clock },
-  Funded:   { label: 'Funds Locked',     color: 'bg-blue-500/20 text-blue-400',      icon: ShieldCheck },
-  Released: { label: 'Released to Artist', color: 'bg-green-500/20 text-green-400',  icon: CheckCircle2 },
-  Refunded: { label: 'Refunded to Client', color: 'bg-red-500/20 text-red-400',      icon: XCircle },
-  Unknown:  { label: 'Unknown',          color: 'bg-textmuted/20 text-textmuted',    icon: Clock },
-};
-
-function StateBadge({ state }) {
-  const cfg = STATE_CONFIG[state] || STATE_CONFIG.Unknown;
-  const Icon = cfg.icon;
-  return (
-    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold ${cfg.color}`}>
-      <Icon className="w-4 h-4" />
-      {cfg.label}
-    </span>
-  );
-}
+import { ShieldCheck, Loader2, ExternalLink, RefreshCw, Plus, ArrowLeft, CheckCircle2, XCircle } from 'lucide-react';
+import StateBadge from '../components/StateBadge';
+import OrbitTimer from '../components/OrbitTimer';
+import OrbitTimerCompact from '../components/OrbitTimerCompact';
 
 // ─── Transaction Toast ────────────────────────────────────────────────────────
 function TxToast({ tx, onClose }) {
@@ -40,25 +23,25 @@ function TxToast({ tx, onClose }) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 20 }}
-      className={`fixed bottom-6 right-6 z-50 max-w-sm p-4 rounded-2xl shadow-2xl border ${
+      className={`fixed bottom-6 right-6 z-50 max-w-sm p-4 rounded-card-sm shadow-lg border ${
         isError
-          ? 'bg-red-500/10 border-red-500/30 text-red-400'
-          : 'bg-green-500/10 border-green-500/30 text-green-400'
+          ? 'bg-status-refunded border-border text-ink'
+          : 'bg-status-released border-border text-ink'
       }`}
     >
-      <div className="font-bold mb-1">{isError ? '❌ Error' : '✅ Success'}</div>
-      <div className="text-sm opacity-90 mb-2">{tx.message}</div>
+      <div className="font-medium mb-1">{isError ? 'Error' : 'Success'}</div>
+      <div className="text-sm text-graphite mb-2">{tx.message}</div>
       {tx.explorerUrl && (
         <a
           href={tx.explorerUrl}
           target="_blank"
           rel="noreferrer"
-          className="text-xs flex items-center gap-1 underline opacity-75 hover:opacity-100"
+          className="text-xs flex items-center gap-1 text-accent hover:underline"
         >
           View on Stellar Expert <ExternalLink className="w-3 h-3" />
         </a>
       )}
-      <button onClick={onClose} className="absolute top-2 right-3 text-lg opacity-50 hover:opacity-100">×</button>
+      <button onClick={onClose} className="absolute top-2 right-3 text-lg text-fog hover:text-ink">×</button>
     </motion.div>
   );
 }
@@ -68,26 +51,19 @@ export default function Dashboard() {
   const { address } = useWallet();
   const [commissions, setCommissions] = useState([]);
   const [loadingCommissions, setLoadingCommissions] = useState(true);
-  
-  // Navigation State
-  const [activeView, setActiveView] = useState('list'); // 'list' | 'create' | 'escrow'
+
+  const [activeView, setActiveView] = useState('list');
   const [selectedCommission, setSelectedCommission] = useState(null);
 
-  // Load user's commissions from FastAPI
   const fetchCommissions = useCallback(async () => {
     if (!address) return;
     setLoadingCommissions(true);
     try {
-      // By checking client_address, we see commissions where user is paying
-      // We can also check artist_address, but since the API requires one at a time we'll do both or just let frontend filter.
-      // For simplicity, we fetch all where user is client.
       const clientComms = await commissionService.getAll({ client_address: address });
       const artistComms = await commissionService.getAll({ artist_address: address });
-      
-      // Deduplicate if user is both somehow
       const all = [...clientComms, ...artistComms];
       const unique = Array.from(new Map(all.map(item => [item.id, item])).values());
-      unique.sort((a,b) => b.id - a.id); // newest first
+      unique.sort((a, b) => b.id - a.id);
       setCommissions(unique);
     } catch (e) {
       console.error("Failed to load commissions:", e);
@@ -96,16 +72,14 @@ export default function Dashboard() {
     }
   }, [address]);
 
-  useEffect(() => {
-    fetchCommissions();
-  }, [fetchCommissions]);
+  useEffect(() => { fetchCommissions(); }, [fetchCommissions]);
 
   if (!address) {
     return (
-      <div className="max-w-7xl mx-auto px-6 py-24 flex flex-col items-center justify-center text-center">
-        <ShieldCheck className="w-16 h-16 text-primary mb-6 opacity-50" />
-        <h1 className="text-3xl font-bold mb-3">Connect Your Wallet</h1>
-        <p className="text-textmuted max-w-md">
+      <div className="max-w-page mx-auto px-6 py-24 flex flex-col items-center justify-center text-center">
+        <ShieldCheck className="w-16 h-16 text-accent mb-6 opacity-50" strokeWidth={1.5} />
+        <h1 className="text-heading font-medium text-ink mb-3">Connect Your Wallet</h1>
+        <p className="text-graphite max-w-md">
           Connect your Freighter wallet to interact with the ComiSure Escrow platform.
         </p>
       </div>
@@ -113,19 +87,19 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-12">
+    <div className="max-w-page mx-auto px-6 py-12">
       {/* Header */}
       <div className="flex items-center justify-between mb-10">
         <div>
-          <h1 className="text-4xl font-extrabold mb-2">My Commissions</h1>
-          <p className="text-textmuted text-sm font-mono truncate max-w-xs" title={address}>
+          <h1 className="text-heading-lg font-medium text-ink tracking-tight mb-1">My Commissions</h1>
+          <p className="text-sm font-mono text-fog truncate max-w-xs" title={address}>
             {address.slice(0, 10)}...{address.slice(-6)}
           </p>
         </div>
         {activeView === 'list' && (
           <button
             onClick={() => setActiveView('create')}
-            className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white font-bold rounded-full hover:bg-primary/80 transition-colors"
+            className="flex items-center gap-2 px-5 py-2.5 bg-action text-action-text font-medium rounded-btn shadow-button hover:opacity-90 transition-opacity"
           >
             <Plus className="w-5 h-5" />
             New Commission
@@ -135,67 +109,78 @@ export default function Dashboard() {
 
       <AnimatePresence mode="wait">
         {activeView === 'list' && (
-           <motion.div key="list" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}}>
-             {loadingCommissions ? (
-               <div className="py-20 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
-             ) : commissions.length === 0 ? (
-               <div className="glass-panel p-12 text-center">
-                 <h3 className="text-xl font-bold mb-2">No Commissions Found</h3>
-                 <p className="text-textmuted mb-6">You don't have any active escrows on the network yet.</p>
-                 <button
-                    onClick={() => setActiveView('create')}
-                    className="px-6 py-2 bg-textmain text-background font-bold rounded-full"
-                  >
-                    Create Your First Commission
-                  </button>
-               </div>
-             ) : (
-               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                 {commissions.map(c => (
-                   <div 
-                     key={c.id} 
-                     onClick={() => { setSelectedCommission(c); setActiveView('escrow'); }}
-                     className="glass-panel p-6 cursor-pointer hover:border-primary transition-colors flex flex-col h-full"
-                   >
-                     <div className="flex justify-between items-start mb-4">
-                       <h3 className="text-lg font-bold">{c.title}</h3>
-                       <span className="text-sm font-bold text-primary">{c.amount_usdc} USDC</span>
-                     </div>
-                     <p className="text-sm text-textmuted mb-4 line-clamp-2 flex-grow">{c.description}</p>
-                     <div className="text-xs font-mono text-textmuted bg-background p-2 rounded-lg truncate">
-                       ID: {c.contract_id || "Deploying..."}
-                     </div>
-                   </div>
-                 ))}
-               </div>
-             )}
-           </motion.div>
+          <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            {loadingCommissions ? (
+              <div className="py-20 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-accent" /></div>
+            ) : commissions.length === 0 ? (
+              <div className="p-12 text-center rounded-card bg-surface">
+                <h3 className="text-heading-sm font-medium text-ink mb-2">No Commissions Found</h3>
+                <p className="text-graphite mb-6">You don't have any active escrows on the network yet.</p>
+                <button
+                  onClick={() => setActiveView('create')}
+                  className="px-6 py-2.5 bg-action text-action-text font-medium rounded-btn shadow-button"
+                >
+                  Create Your First Commission
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {commissions.map(c => {
+                  const createdAt = c.created_at ? Math.floor(new Date(c.created_at).getTime() / 1000) : 0;
+                  const deadlineAt = c.deadline_at ? Math.floor(new Date(c.deadline_at).getTime() / 1000) : 0;
+                  return (
+                    <div
+                      key={c.id}
+                      onClick={() => { setSelectedCommission(c); setActiveView('escrow'); }}
+                      className="p-6 rounded-card bg-surface border border-border hover:border-accent cursor-pointer transition-colors flex flex-col h-full"
+                    >
+                      <div className="flex justify-between items-start mb-3">
+                        <h3 className="text-lg font-medium text-ink">{c.title}</h3>
+                        <span className="text-sm font-medium text-accent">{c.amount_usdc} USDC</span>
+                      </div>
+                      <p className="text-sm text-graphite mb-3 line-clamp-2 flex-grow">{c.description}</p>
+                      <div className="text-xs font-mono text-fog bg-canvas p-2 rounded-card-sm truncate">
+                        {c.contract_id || "Deploying..."}
+                      </div>
+                      {deadlineAt > 0 && (
+                        <OrbitTimerCompact
+                          deadlineUnix={deadlineAt}
+                          createdAtUnix={createdAt}
+                          state={c.status}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </motion.div>
         )}
 
         {activeView === 'create' && (
-           <motion.div key="create" initial={{opacity: 0, y: 10}} animate={{opacity: 1, y: 0}} exit={{opacity: 0}}>
-             <CreateCommissionView 
-                address={address} 
-                onCancel={() => setActiveView('list')}
-                onSuccess={(newComm) => {
-                  fetchCommissions(); // Refresh the list
-                  setSelectedCommission(newComm);
-                  setActiveView('escrow'); // Immediately open panel
-                }}
-             />
-           </motion.div>
+          <motion.div key="create" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+            <CreateCommissionView
+              address={address}
+              onCancel={() => setActiveView('list')}
+              onSuccess={(newComm) => {
+                fetchCommissions();
+                setSelectedCommission(newComm);
+                setActiveView('escrow');
+              }}
+            />
+          </motion.div>
         )}
 
         {activeView === 'escrow' && selectedCommission && (
-           <motion.div key="escrow" initial={{opacity: 0, x: 20}} animate={{opacity: 1, x: 0}} exit={{opacity: 0}}>
-             <button 
-                onClick={() => { setActiveView('list'); setSelectedCommission(null); fetchCommissions(); }}
-                className="flex items-center gap-2 text-textmuted hover:text-textmain mb-6 font-semibold"
-             >
-                <ArrowLeft className="w-4 h-4"/> Back to list
-             </button>
-             <ActiveEscrowView commission={selectedCommission} walletAddress={address} />
-           </motion.div>
+          <motion.div key="escrow" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}>
+            <button
+              onClick={() => { setActiveView('list'); setSelectedCommission(null); fetchCommissions(); }}
+              className="flex items-center gap-2 text-graphite hover:text-ink mb-6 font-medium"
+            >
+              <ArrowLeft className="w-4 h-4" /> Back to list
+            </button>
+            <ActiveEscrowView commission={selectedCommission} walletAddress={address} />
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
@@ -209,7 +194,8 @@ function CreateCommissionView({ address, onCancel, onSuccess }) {
     title: '',
     description: '',
     artist_address: '',
-    amount_usdc: '10'
+    amount_usdc: '10',
+    deadline_days: '14',
   });
 
   const handleSubmit = async (e) => {
@@ -219,12 +205,11 @@ function CreateCommissionView({ address, onCancel, onSuccess }) {
       const payload = {
         title: formData.title,
         description: formData.description,
-        client_address: address, // Sender is the client
+        client_address: address,
         artist_address: formData.artist_address,
         amount_usdc: parseInt(formData.amount_usdc, 10),
+        deadline_days: parseInt(formData.deadline_days, 10),
       };
-      
-      // Hits the POST /commissions/ hook, triggering the physical contract deployment under the hood!
       const newCommission = await commissionService.create(payload);
       onSuccess(newCommission);
     } catch (e) {
@@ -235,39 +220,77 @@ function CreateCommissionView({ address, onCancel, onSuccess }) {
   };
 
   return (
-    <div className="glass-panel p-8 max-w-2xl mx-auto">
-      <h2 className="text-2xl font-bold mb-6">Create New Escrow 🚀</h2>
-      <p className="text-sm text-textmuted mb-8">
-        Once submitted, the ComiSure backend will dynamically compile, deploy, and initialize a unique Soroban Smart Contract exclusively for this commission. This may take up to 15 seconds.
+    <div className="p-8 max-w-2xl mx-auto rounded-card bg-surface">
+      <h2 className="text-heading font-medium text-ink mb-2">Create New Escrow</h2>
+      <p className="text-sm text-graphite mb-8">
+        The backend will deploy and initialize a unique Soroban Smart Contract for this commission. This may take up to 15 seconds.
       </p>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="block text-sm font-bold mb-2">Title</label>
-          <input required type="text" className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:border-primary outline-none" 
-            value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} placeholder="e.g., Cyberpunk Character Portrait" />
+          <label className="block text-sm font-medium text-ink mb-2">Title</label>
+          <input
+            required type="text"
+            className="w-full px-4 py-3 bg-canvas border border-border rounded-input focus:border-accent outline-none text-ink transition-colors"
+            value={formData.title}
+            onChange={e => setFormData({ ...formData, title: e.target.value })}
+            placeholder="e.g., Cyberpunk Character Portrait"
+          />
         </div>
         <div>
-          <label className="block text-sm font-bold mb-2">Description / Requirements</label>
-          <textarea required rows={3} className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:border-primary outline-none" 
-            value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} placeholder="Provide a link to references..." />
+          <label className="block text-sm font-medium text-ink mb-2">Description / Requirements</label>
+          <textarea
+            required rows={3}
+            className="w-full px-4 py-3 bg-canvas border border-border rounded-input focus:border-accent outline-none text-ink transition-colors"
+            value={formData.description}
+            onChange={e => setFormData({ ...formData, description: e.target.value })}
+            placeholder="Provide references, style notes, dimensions..."
+          />
         </div>
         <div>
-          <label className="block text-sm font-bold mb-2">Artist Stellar Address</label>
-          <input required type="text" className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:border-primary outline-none font-mono text-sm" 
-            value={formData.artist_address} onChange={e => setFormData({...formData, artist_address: e.target.value})} placeholder="G..." />
+          <label className="block text-sm font-medium text-ink mb-2">Artist Stellar Address</label>
+          <input
+            required type="text"
+            className="w-full px-4 py-3 bg-canvas border border-border rounded-input focus:border-accent outline-none font-mono text-sm text-ink transition-colors"
+            value={formData.artist_address}
+            onChange={e => setFormData({ ...formData, artist_address: e.target.value })}
+            placeholder="G..."
+          />
         </div>
-        <div>
-          <label className="block text-sm font-bold mb-2">Commission Amount (USDC)</label>
-          <input required type="number" min="1" className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:border-primary outline-none" 
-            value={formData.amount_usdc} onChange={e => setFormData({...formData, amount_usdc: e.target.value})} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-ink mb-2">Amount (USDC)</label>
+            <input
+              required type="number" min="1"
+              className="w-full px-4 py-3 bg-canvas border border-border rounded-input focus:border-accent outline-none text-ink transition-colors"
+              value={formData.amount_usdc}
+              onChange={e => setFormData({ ...formData, amount_usdc: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-ink mb-2">Deadline (Days)</label>
+            <input
+              required type="number" min="1" max="90"
+              className="w-full px-4 py-3 bg-canvas border border-border rounded-input focus:border-accent outline-none text-ink transition-colors"
+              value={formData.deadline_days}
+              onChange={e => setFormData({ ...formData, deadline_days: e.target.value })}
+            />
+            <p className="text-xs text-fog mt-1">You can self-refund after this many days.</p>
+          </div>
         </div>
+
         <div className="pt-6 flex gap-4">
-          <button type="button" onClick={onCancel} disabled={loading} className="flex-1 px-4 py-3 border border-border text-center rounded-xl hover:bg-background transition-colors">
+          <button
+            type="button" onClick={onCancel} disabled={loading}
+            className="flex-1 px-4 py-3 border border-border text-center rounded-btn text-ink hover:bg-canvas transition-colors font-medium"
+          >
             Cancel
           </button>
-          <button type="submit" disabled={loading} className="flex-[2] flex gap-2 justify-center items-center px-4 py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/80 transition-colors">
-            {loading ? <><Loader2 className="w-5 h-5 animate-spin" /> Deploying On-Chain...</> : "Deploy Contract & Init"}
+          <button
+            type="submit" disabled={loading}
+            className="flex-[2] flex gap-2 justify-center items-center px-4 py-3 bg-action text-action-text font-medium rounded-btn shadow-button hover:opacity-90 transition-opacity disabled:opacity-50"
+          >
+            {loading ? <><Loader2 className="w-5 h-5 animate-spin" /> Deploying...</> : "Deploy & Initialize"}
           </button>
         </div>
       </form>
@@ -275,15 +298,17 @@ function CreateCommissionView({ address, onCancel, onSuccess }) {
   );
 }
 
-// ─── Active Escrow View (Dynamically Loaded) ──────────────────────────────────
+// ─── Active Escrow View ───────────────────────────────────────────────────────
 function ActiveEscrowView({ commission, walletAddress }) {
   const [contractState, setContractState] = useState(null);
-  const [lockedAmount,  setLockedAmount]  = useState(0n);
-  const [loading,  setLoading]  = useState(false);
+  const [lockedAmount, setLockedAmount] = useState(0n);
+  const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
-  const [toast,    setToast]    = useState(null);
-  
+  const [toast, setToast] = useState(null);
+
   const contractId = commission.contract_id;
+  const createdAt = commission.created_at ? Math.floor(new Date(commission.created_at).getTime() / 1000) : 0;
+  const deadlineAt = commission.deadline_at ? Math.floor(new Date(commission.deadline_at).getTime() / 1000) : 0;
 
   const fetchState = useCallback(async () => {
     if (!walletAddress || !contractId) return;
@@ -310,7 +335,7 @@ function ActiveEscrowView({ commission, walletAddress }) {
     setToast(null);
     try {
       const result = await fn();
-      setToast({ type: 'success', message: `${label} confirmed! ✓`, explorerUrl: result.explorerUrl });
+      setToast({ type: 'success', message: `${label} confirmed!`, explorerUrl: result.explorerUrl });
       await fetchState();
     } catch (e) {
       console.error(e);
@@ -325,7 +350,7 @@ function ActiveEscrowView({ commission, walletAddress }) {
     setToast(null);
     try {
       await apiCall();
-      setToast({ type: 'success', message: `${label} successful! ✓` });
+      setToast({ type: 'success', message: `${label} successful!` });
       await fetchState();
     } catch (e) {
       console.error(e);
@@ -337,87 +362,105 @@ function ActiveEscrowView({ commission, walletAddress }) {
 
   const usdcFormatted = lockedAmount > 0n ? (Number(lockedAmount) / 10_000_000).toFixed(2) : '0.00';
   const displayId = contractId || "PENDING";
-  
+
   return (
     <>
       <TxToast tx={toast} onClose={() => setToast(null)} />
-      
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="glass-panel p-8 mb-8">
+
+      {/* Info Panel */}
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="p-8 rounded-card bg-surface mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h2 className="text-2xl font-bold">{commission.title}</h2>
+            <h2 className="text-heading font-medium text-ink">{commission.title}</h2>
             <div className="mt-2 flex items-center gap-2">
-               <p className="text-xs text-textmuted font-mono">ID</p>
-               <a href={`https://stellar.expert/explorer/testnet/contract/${displayId}`} target="_blank" rel="noreferrer" className="text-sm font-mono text-primary hover:underline flex items-center gap-1">
-                 {displayId.slice(0, 12)}...{displayId.slice(-6)} <ExternalLink className="w-3 h-3" />
-               </a>
+              <span className="text-xs text-fog font-mono">ID</span>
+              <a
+                href={`https://stellar.expert/explorer/testnet/contract/${displayId}`}
+                target="_blank" rel="noreferrer"
+                className="text-sm font-mono text-accent hover:underline flex items-center gap-1"
+              >
+                {displayId.slice(0, 12)}...{displayId.slice(-6)} <ExternalLink className="w-3 h-3" />
+              </a>
             </div>
           </div>
           <div className="flex flex-col items-end gap-2">
-            <button onClick={fetchState} disabled={fetching} className="text-xs text-textmuted hover:text-textmain flex items-center gap-1 mb-1">
+            <button onClick={fetchState} disabled={fetching} className="text-xs text-fog hover:text-ink flex items-center gap-1 mb-1">
               <RefreshCw className={`w-3 h-3 ${fetching ? 'animate-spin' : ''}`} /> Refresh
             </button>
-            {contractState ? <StateBadge state={contractState} /> : <Loader2 className="w-5 h-5 animate-spin text-textmuted" />}
+            {contractState ? <StateBadge state={contractState} /> : <Loader2 className="w-5 h-5 animate-spin text-fog" />}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="p-4 rounded-xl border border-border bg-background">
-            <p className="text-xs text-textmuted mb-1">Locked Amount</p>
-            <p className="text-2xl font-bold">{usdcFormatted} <span className="text-sm text-textmuted">USDC</span></p>
+        {/* Stats + Orbit Timer */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+          <div className="p-4 rounded-card-sm border border-border bg-canvas">
+            <p className="text-xs text-fog mb-1">Locked Amount</p>
+            <p className="text-heading-sm font-medium text-ink">{usdcFormatted} <span className="text-sm text-fog">USDC</span></p>
           </div>
-          <div className="p-4 rounded-xl border border-border bg-background">
-            <p className="text-xs text-textmuted mb-1">Escrow State</p>
-            <p className="text-2xl font-bold">{contractState ?? '—'}</p>
+          <div className="p-4 rounded-card-sm border border-border bg-canvas">
+            <p className="text-xs text-fog mb-1">Escrow State</p>
+            <p className="text-heading-sm font-medium text-ink">{contractState ?? '—'}</p>
           </div>
+          {deadlineAt > 0 && (
+            <div className="flex justify-center">
+              <OrbitTimer
+                deadlineUnix={deadlineAt}
+                createdAtUnix={createdAt}
+                state={contractState}
+              />
+            </div>
+          )}
         </div>
       </motion.div>
 
+      {/* Action Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Deposit Funds */}
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-panel p-6">
-          <h2 className="text-xl font-bold mb-1">Deposit Funds</h2>
-          <p className="text-textmuted text-sm mb-4">Lock {commission.amount_usdc} USDC into the contract.</p>
+        {/* Deposit */}
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="p-6 rounded-card bg-surface">
+          <h2 className="text-subheading font-medium text-ink mb-1">Lock Funds</h2>
+          <p className="text-sm text-graphite mb-4">Deposit {commission.amount_usdc} USDC into the contract.</p>
           <button
             disabled={loading || contractState !== 'Pending'}
             onClick={() => invoke(() => depositFunds(contractId, walletAddress, commission.amount_usdc), 'Deposit')}
-            className="w-full px-4 py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/80 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full px-4 py-3 bg-action text-action-text font-medium rounded-btn shadow-button hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-            Deposit {commission.amount_usdc} USDC
+            Lock {commission.amount_usdc} USDC
           </button>
         </motion.div>
 
         {/* Approve Release */}
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="glass-panel p-6">
-          <h2 className="text-xl font-bold mb-1">Approve Release</h2>
-          <p className="text-textmuted text-sm mb-4">Release locked funds to <strong>{commission.artist_address.slice(0, 6)}...</strong></p>
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="p-6 rounded-card bg-surface">
+          <h2 className="text-subheading font-medium text-ink mb-1">Approve & Release</h2>
+          <p className="text-sm text-graphite mb-4">Release locked funds to <strong className="text-ink">{commission.artist_address?.slice(0, 6)}...</strong></p>
           <button
             disabled={loading || contractState !== 'Funded'}
             onClick={() => invoke(() => approveRelease(contractId, walletAddress), 'Approve Release')}
-            className="w-full px-4 py-3 bg-green-600 text-white font-bold rounded-xl hover:bg-green-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full px-4 py-3 bg-status-released text-ink font-medium rounded-btn hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
             Approve & Release
           </button>
         </motion.div>
 
-        {/* Admin Bounds */}
-        <div className="md:col-span-2 mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-           <button
-             disabled={loading || contractState !== 'Funded'}
-             onClick={() => invokeBackendAdmin(() => commissionService.adminRefund(commission.id), 'Admin Refund (Backend)')}
-             className="px-4 py-3 border border-red-500/30 text-red-500 bg-red-500/5 font-bold text-sm rounded-xl hover:bg-red-500/10 disabled:opacity-40"
-           >
-             Admin: Refund Client
-           </button>
-           <button
-             disabled={loading || contractState !== 'Funded'}
-             onClick={() => invokeBackendAdmin(() => commissionService.adminForceRelease(commission.id), 'Force Release (Backend)')}
-             className="px-4 py-3 border border-orange-500/30 text-orange-500 bg-orange-500/5 font-bold text-sm rounded-xl hover:bg-orange-500/10 disabled:opacity-40"
-           >
-             Admin: Force-Release to Artist
-           </button>
+        {/* Admin Actions */}
+        <div className="md:col-span-2 mt-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <button
+            disabled={loading || contractState !== 'Funded'}
+            onClick={() => invokeBackendAdmin(() => commissionService.adminRefund(commission.id), 'Admin Refund')}
+            className="px-4 py-3 border border-border text-graphite bg-canvas font-medium text-sm rounded-btn hover:border-accent disabled:opacity-40 transition-colors"
+          >
+            <XCircle className="w-4 h-4 inline mr-2" />
+            Admin: Refund Client
+          </button>
+          <button
+            disabled={loading || contractState !== 'Funded'}
+            onClick={() => invokeBackendAdmin(() => commissionService.adminForceRelease(commission.id), 'Force Release')}
+            className="px-4 py-3 border border-border text-graphite bg-canvas font-medium text-sm rounded-btn hover:border-accent disabled:opacity-40 transition-colors"
+          >
+            <CheckCircle2 className="w-4 h-4 inline mr-2" />
+            Admin: Force-Release to Artist
+          </button>
         </div>
       </div>
     </>
