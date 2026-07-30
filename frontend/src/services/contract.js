@@ -47,12 +47,12 @@ function friendlyContractError(error, context = {}) {
       : context.operation === 'deposit_funds'
         ? 'the client wallet'
         : 'the target wallet';
-    return `${actor} does not have a USDC trustline. The failing account is likely ${target}. Open that wallet and add/enable a USDC trustline, then try again.`;
+    return `${actor} does not have a USDC trustline. The failing account is likely ${target}.\n\nHow to fix: Open the receiving wallet (e.g., Freighter) → Go to "Manage Assets" → Search for USDC → Add the trustline. Then try this action again.`;
   }
 
   if (lower.includes('insufficient balance')) {
     const actor = context.actorLabel || 'the wallet';
-    return `${actor} does not have enough USDC balance for this action.`;
+    return `${actor} does not have enough USDC balance for this action.\n\nHow to fix: Ensure the wallet has sufficient USDC. On testnet, you can get test USDC from the Stellar Laboratory or a faucet.`;
   }
 
   if (lower.includes('only the client can approve')) {
