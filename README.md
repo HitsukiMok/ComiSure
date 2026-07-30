@@ -1,4 +1,4 @@
-<img width="1722" height="850" alt="Main index" src="https://github.com/user-attachments/assets/763266e6-7c2d-4ba7-b424-42f31b96baf9" />
+<img width="1836" height="860" alt="image" src="https://github.com/user-attachments/assets/6dd90681-8b01-4ae9-b313-4f96618d81ad" />
 
 
 # ComiSure
@@ -72,32 +72,34 @@ ComiSure is a decentralized web application that acts as a trustless escrow midd
 ## UI / Screenshots
 
 ### Home Interface
-<img width="1722" height="850" alt="Main index" src="https://github.com/user-attachments/assets/763266e6-7c2d-4ba7-b424-42f31b96baf9" />
+<img width="1836" height="860" alt="Landing Page" src="https://github.com/user-attachments/assets/6fbbba0d-7689-4ce3-9b5e-7d5b40965340" />
+
 
 
 ### Wallet Connect using Stellar Wallet Kit
-<img width="618" height="597" alt="Wallet Connect" src="https://github.com/user-attachments/assets/2b936ef4-df84-4105-8066-ce1a67ca7ff3" />
+<img width="1846" height="874" alt="Stellar Wallet Kit" src="https://github.com/user-attachments/assets/3b619773-ad49-48dd-9269-29b295957f4b" />
+
 
 
 ### Client Dashboard (Contains contracts from artists)
-<img width="1718" height="811" alt="Client Dashboard" src="https://github.com/user-attachments/assets/9f3dab71-b661-40e8-93f5-6dc4b70f3fe7" />
+<img width="1844" height="869" alt="Dashboard" src="https://github.com/user-attachments/assets/f0d17e7f-afca-48a1-88b0-414bb1fdad03" />
 
 
 ### Client Creating New Contract
-<img width="1219" height="851" alt="New Contract" src="https://github.com/user-attachments/assets/d09a28c8-9377-4727-b969-98eca0e8ebfb" />
+<img width="1825" height="875" alt="New Contract" src="https://github.com/user-attachments/assets/e70ec72d-7699-40b6-9497-6f2d051629df" />
+
 
 
 ### Contract Preview
-<img width="1016" height="688" alt="Contract Preview" src="https://github.com/user-attachments/assets/051cfea8-5417-4e02-b219-37625595466f" />
+<img width="1845" height="876" alt="Contract" src="https://github.com/user-attachments/assets/91d6609a-a424-48dd-9118-3c02f24bc13b" />
+
 
 > The client confirms the deposit first for the set amount of USDC. The client can then approve the release of funds after the artist delivers the commission. If a dispute happens, the admin with the admin wallet can interfere by refunding or releasing the funds depending on the case.
 
 
 ### Transactions Status Preview
-<img width="1399" height="777" alt="Successful" src="https://github.com/user-attachments/assets/818081db-5f48-492f-a154-78da78844a5a" />
+<img width="1837" height="800" alt="Successful" src="https://github.com/user-attachments/assets/250f3ac6-90c9-4b5e-be20-dee2b9df02dd" />
 
-
-<img width="999" height="587" alt="Refunded" src="https://github.com/user-attachments/assets/133a78c8-8863-4b63-ab4d-a789ea807201" />
 
 -----
 
@@ -257,6 +259,16 @@ ComiSure/
 
 We collected feedback from real users who tested the platform. Below are screenshots of user responses.
 
-*Screenshots will be added here.*
+<img width="1861" height="802" alt="image" src="https://github.com/user-attachments/assets/1f37de52-e362-469e-9517-dc404144fa0a" />
 
 [Submit your feedback via our Google Form](https://forms.gle/4f5tieNnnre5tjmR8)
+
+### User Feedback as of July 30, 2026:
+
+ComiSure received positive user feedback across all metrics. The platform scores above 4.0 in 6 of 7 categories. Visual design and ease of use are the strongest areas (4.7 and 4.6 respectively). The core value proposition — trustless escrow for art commissions — resonates clearly with users, reflected in the 4.5 trust score.
+
+
+The primary gap is **process clarity** (3.9/5). Users understand the concept but struggle with the step-by-step execution. This is solvable through better onboarding copy, in-app tooltips, and a guided first-commission flow.
+
+
+For a testnet MVP, these results demonstrate strong product-market fit with the target audience (Filipino freelance artists and their clients). The platform is technically sound, visually polished, and functionally complete. The recommended next steps are: improve onboarding clarity, differentiate the artist dashboard, and fix the timezone offset in the deadline timer.
