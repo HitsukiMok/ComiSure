@@ -79,6 +79,10 @@ function friendlyContractError(error, context = {}) {
     return `On-chain contract error: ${raw}`;
   }
 
+  if (lower.includes('txbadauth') || lower.includes('bad_auth') || lower.includes('"value":-6')) {
+    return 'Transaction authorization failed. This usually means the wallet signature was rejected by the network.\n\nHow to fix: Disconnect and reconnect your wallet, then try again. Make sure you are signing with the correct account.';
+  }
+
   return raw;
 }
 
@@ -114,9 +118,10 @@ async function invokeContract(callerAddress, operation, context = {}) {
   const preparedTx = await server.prepareTransaction(tx);
 
   // 4. Sign with the connected wallet via Stellar Wallets Kit
+  // Pass address so the wallet knows which auth entries to sign
   const { signedTxXdr } = await StellarWalletsKit.signTransaction(
     preparedTx.toXDR(),
-    { networkPassphrase: NETWORK }
+    { networkPassphrase: NETWORK, address: callerAddress }
   );
 
   // 5. Submit the signed transaction
