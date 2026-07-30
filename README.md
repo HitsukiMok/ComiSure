@@ -1,11 +1,11 @@
 <img width="1722" height="850" alt="Main index" src="https://github.com/user-attachments/assets/763266e6-7c2d-4ba7-b424-42f31b96baf9" />
 
 
-# 🎨 ComiSure
+# ComiSure
 
 **Trustless USDC escrow for freelance digital art commissions on the Stellar Network.**
 
-ComiSure replaces informal, trust-based payment channels with a decentralized Soroban smart contract. Protect yourself from chargeback scams and ghost artists using instant, on-chain settlements.
+ComiSure replaces informal, trust-based payment channels with a decentralized Soroban smart contract. It protects clients and artists from chargeback scams and ghost deliveries through instant, on-chain settlements.
 
 * **GitHub Repo**: [HitsukiMok/ComiSure](https://github.com/HitsukiMok/ComiSure)
 * **Contract Factory ID**: `CAWAKGBTHWFMTB6O74CDJ5WOVLLFZ5WMKTBKOP2FNB5BUMTQPZYQZN3J`
@@ -15,50 +15,52 @@ ComiSure replaces informal, trust-based payment channels with a decentralized So
 
 ---
 
-## 📌 Navigation
-* [📺 Project Demo Video](#-project-demo-video)
-* [📖 Project Description](#-project-description)
-* [✨ Core Features](#-core-features)
-* [🔗 Deployed Contract Details](#-deployed-contract-details)
-* [🖥️ UI / Screenshots](#️-ui--screenshots)
-* [🚀 True Dynamic Pipeline Structure](#-true-dynamic-pipeline-structure)
-* [🛠 Tech Stack](#-tech-stack)
-* [☁️ Deployment Architecture (Vercel + Render)](#️-deployment-architecture-vercel--render)
-* [🏃 Local Development Quickstart](#-local-development-quickstart)
-* [🔒 Security Hardening, Auth, & Rate Limiting](#-security-hardening-auth--rate-limiting) <-New Feature!
-* [⚙️ Smart Contract Development](#️-smart-contract-development) 
-* [📂 Project Structure](#-project-structure)
+## Navigation
+* [Project Demo Video](#project-demo-video)
+* [Project Description](#project-description)
+* [Core Features](#core-features)
+* [Deployed Contract Details](#deployed-contract-details)
+* [UI / Screenshots](#ui--screenshots)
+* [True Dynamic Pipeline Structure](#true-dynamic-pipeline-structure)
+* [Tech Stack](#tech-stack)
+* [Deployment Architecture (Vercel + Render)](#deployment-architecture-vercel--render)
+* [Local Development Quickstart](#local-development-quickstart)
+* [Deadline and Auto-Refund](#deadline-and-auto-refund)
+* [Smart Contract Development](#smart-contract-development)
+* [Project Structure](#project-structure)
+* [Users Feedback](#users-feedback)
 
 ---
 
-## 📺 Project Demo Video
+## Project Demo Video
 
 [![ComiSure Project Demo](https://img.shields.io/badge/YouTube-Demo%20Video-red?style=for-the-badge&logo=youtube)](https://youtu.be/71GF2m4M4fo)
 
-Click the badge above or navigate to the following link to view our live system walkthrough and features demonstration:
-👉 **[Watch the ComiSure Demo Video on YouTube](https://youtu.be/71GF2m4M4fo)**
+Click the badge above or navigate to the following link to view the live system walkthrough and features demonstration:
+**[Watch the ComiSure Demo Video on YouTube](https://youtu.be/71GF2m4M4fo)**
 
 ---
 
-## 📖 Project Description
+## Project Description
 
-Freelance digital artists and their clients face rampant fraud. Artists suffer severe income loss from malicious PayPal chargebacks after delivering unwatermarked artwork, while clients risk sending upfront e-wallet payments (like PayPal) to "artists" who ghost them.
+Freelance digital artists and their clients face rampant fraud. Artists suffer severe income loss from malicious PayPal chargebacks after they deliver unwatermarked artwork. Clients risk sending upfront e-wallet payments to artists who disappear without delivering.
 
-**ComiSure** is a decentralized web application that acts as a trustless escrow middleman. Clients initiate a commission by depositing USDC into a custom Soroban smart contract. The funds are securely locked on-chain, proving to the artist that the money is guaranteed. Once the artist delivers the final piece, the client approves the release, and the funds are instantly routed to the artist's wallet. By utilizing the Stellar network, ComiSure leverages 5-second settlement times and sub-cent transaction fees, making smart contract escrows economically viable even for small, everyday art commissions (₱500 - ₱5,000).
-
------
-
-## ✨ Core Features
-
-* **Trustless USDC Escrow:** Lock commission funds upfront in a stablecoin, protecting both parties from crypto volatility and payment fraud.
-* **Client-Driven Approval:** Funds are only released to the artist when the client reviews and approves the final delivered artwork.
-* **Admin Dispute Resolution:** A built-in fallback mechanism. If a client maliciously withholds approval after delivery, or if an artist fails to deliver, the platform Admin can step in to force-release or refund the USDC.
-* **Dynamic Contract Generation:** Every single commission gets its own physically isolated Soroban smart contract generated on the fly, preventing centralized contract bottlenecks.
-* **Micro-transaction Optimized:** Powered by Stellar, ensuring gas fees do not eat into the artist's hard-earned commission profits.
+ComiSure is a decentralized web application that acts as a trustless escrow middleman. Clients initiate a commission by depositing USDC into a custom Soroban smart contract. The funds lock on-chain. This proves to the artist that the money is guaranteed. Once the artist delivers the final piece, the client approves the release. The funds then route instantly to the artist wallet. The Stellar network provides 5-second settlement times and sub-cent transaction fees. This makes smart contract escrows economically viable even for small, everyday art commissions.
 
 -----
 
-## 🔗 Deployed Contract Details
+## Core Features
+
+* **Trustless USDC Escrow:** Lock commission funds upfront in a stablecoin. This protects both parties from crypto volatility and payment fraud.
+* **Client-Driven Approval:** Funds release to the artist only when the client reviews and approves the final delivered artwork.
+* **Deadline and Auto-Refund:** Each commission has a configurable deadline (1 to 90 days). If the artist does not deliver before the deadline, the client can self-refund directly from the smart contract without admin intervention.
+* **Admin Dispute Resolution:** A built-in fallback mechanism. If a client maliciously withholds approval after delivery, or if an artist fails to deliver, the platform admin can force-release or refund the USDC.
+* **Dynamic Contract Generation:** Every commission gets its own physically isolated Soroban smart contract. The backend generates each contract on the fly. This prevents centralized contract bottlenecks.
+* **Micro-transaction Optimized:** Stellar ensures gas fees do not eat into the artist commission profits.
+
+-----
+
+## Deployed Contract Details
 
 * **Network:** Stellar Testnet
 * **Smart Contract Environment:** Soroban
@@ -67,7 +69,7 @@ Freelance digital artists and their clients face rampant fraud. Artists suffer s
 
 -----
 
-## 🖥️ UI / Screenshots
+## UI / Screenshots
 
 ### Home Interface
 <img width="1722" height="850" alt="Main index" src="https://github.com/user-attachments/assets/763266e6-7c2d-4ba7-b424-42f31b96baf9" />
@@ -88,8 +90,7 @@ Freelance digital artists and their clients face rampant fraud. Artists suffer s
 ### Contract Preview
 <img width="1016" height="688" alt="Contract Preview" src="https://github.com/user-attachments/assets/051cfea8-5417-4e02-b219-37625595466f" />
 
-> The client has to confirm the deposit first for the set amount of USDC they specified and would be able to approve the release of funds if the artist delivered the commission.
-> Just in case a dispute happened, the admin with the admin wallet would be able to interfere by refunding/releasing the funds depending on the case.
+> The client confirms the deposit first for the set amount of USDC. The client can then approve the release of funds after the artist delivers the commission. If a dispute happens, the admin with the admin wallet can interfere by refunding or releasing the funds depending on the case.
 
 
 ### Transactions Status Preview
@@ -100,64 +101,64 @@ Freelance digital artists and their clients face rampant fraud. Artists suffer s
 
 -----
 
-## 🚀 True Dynamic Pipeline Structure
+## True Dynamic Pipeline Structure
 
-Unlike traditional DApps that rely on a single, massive monolithic smart contract to track all users, ComiSure creates a **unique, physically isolated Smart Contract for every single commission.**
+Unlike traditional DApps that rely on a single monolithic smart contract to track all users, ComiSure creates a unique, physically isolated smart contract for every commission.
 
-1. **Frontend Request:** The UI requests a new Escrow.
+1. **Frontend Request:** The UI requests a new escrow.
 2. **Backend Engine:** The FastAPI server connects to the Stellar CLI natively.
-3. **On-the-fly Compilation:** The backend drops a pre-compiled `comi_sure.wasm` bytecode payload directly onto the Stellar Network.
-4. **Initialization:** The backend initializes the contract exclusively with the specific Client and Artist addresses, mapping itself as the irrevocable `admin`.
+3. **On-the-fly Deployment:** The backend deploys a pre-compiled `comi_sure.wasm` bytecode payload directly onto the Stellar Network.
+4. **Initialization:** The backend initializes the contract exclusively with the specific client and artist addresses, the deadline timestamp, and maps itself as the irrevocable admin.
 
 -----
 
-## 🛠 Tech Stack
+## Tech Stack
 
-* **Smart Contract Level:** Soroban SDK (Rust), `wasm32-unknown-unknown`
+* **Smart Contract Level:** Soroban SDK (Rust), `wasm32v1-none`
 * **Backend API Layer:** Python 3, FastAPI, SQLModel, Uvicorn, PostgreSQL
-* **Frontend App:** Frontend React 18, Vite, Tailwind CSS, Framer Motion
+* **Frontend App:** React 19, Vite, Tailwind CSS, Framer Motion
 * **Stellar SDK:** `@stellar/stellar-sdk`, `@creit-tech/stellar-wallets-kit`
+* **Analytics:** Vercel Analytics
 
 
 ---
 
-## ☁️ Deployment Architecture (Vercel + Render)
+## Deployment Architecture (Vercel + Render)
 
-Because of the dynamic compilation pipeline and state persistence, ComiSure requires a specialized cloud infrastructure split between edge hosting and persistent container engines.
+ComiSure requires a specialized cloud infrastructure split between edge hosting and persistent container engines because of the dynamic compilation pipeline and state persistence.
 
 ### 1. Frontend (Deployed to Vercel)
 
-The React Frontend is lightweight, portable, and fully optimized for static hosting environments like **Vercel**.
-Ensure your Vercel Project points its *Root Directory* to `frontend/`.
+The React frontend is lightweight, portable, and optimized for static hosting environments like Vercel. Set the Vercel project root directory to `frontend/`.
 
 **Required Vercel Environment Variables:**
 * `VITE_SOROBAN_RPC`: `https://soroban-testnet.stellar.org`
 * `VITE_API_URL`: `<YOUR_RENDER_WEB_SERVICE_URL>` (e.g., `https://comisure-backend.onrender.com`)
 
-### 2. Backend & Database (Deployed to Render)
+### 2. Backend and Database (Deployed to Render)
 
-The strict requirement for the **Stellar CLI**, background system processes, and persistent data storage is handled seamlessly via **Render**.
+The Stellar CLI requirement, background system processes, and persistent data storage are handled via Render.
 
-#### A. Database Layer (Render PostgreSQL)
-1. Create a **New PostgreSQL** instance on your Render Dashboard.
-2. Once provisioned, copy the **Internal Database URL** (if connecting from within Render) or **External Database URL**.
+#### A. Database Layer (PostgreSQL via Supabase or Render)
+1. Create a PostgreSQL instance on Supabase (free tier) or Render.
+2. Copy the connection string (use the pooler URL for Supabase if connecting from Render).
 
 #### B. API Layer (Render Web Service)
-1. Create a **New Web Service** on Render and link this GitHub repository.
-2. Set the **Root Directory** to `backend/`.
-3. Configure the environment to use your custom `Dockerfile` (Render will build the container from it, automatically installing the Linux Stellar CLI implicitly).
+1. Create a new web service on Render and link this GitHub repository.
+2. Set the root directory to `backend/`.
+3. Configure the environment to use the custom `Dockerfile`. Render builds the container from it and installs the Linux Stellar CLI automatically.
 
 **Required Render Environment Variables:**
-* `DATABASE_URL`: Your Render PostgreSQL connection string (e.g., `postgresql://user:password@hostname/dbname`).
-* `DEPLOYER_SECRET_KEY`: Your deployer identity for signing contract deployments. This can be either a raw Stellar secret seed (`S...`) or a 24-word Stellar seed phrase.
+* `DATABASE_URL`: Your PostgreSQL connection string.
+* `DEPLOYER_SECRET_KEY`: Your deployer identity for signing contract deployments. This can be a raw Stellar secret seed (`S...`) or a 24-word Stellar seed phrase.
 
 ---
 
-## 🏃 Local Development Quickstart
+## Local Development Quickstart
 
-If you are running the system locally for development, run both services side-by-side:
+Run both services side-by-side for local development.
 
-### 1\. FastAPI Backend
+### 1. FastAPI Backend
 
 1. Navigate to the backend directory and set up a virtual environment:
 ```bash
@@ -167,7 +168,7 @@ python -m venv venv
 pip install -r requirements.txt
 ```
 
-2. Run a local Redis server for rate limiting (optional; if not running, backend falls back to in-memory tracking):
+2. Run a local Redis server for rate limiting (optional; if not running, the backend falls back to in-memory tracking):
    - **Docker:** `docker run --name comisure-redis -p 6379:6379 -d redis`
    - **macOS (Homebrew):** `brew install redis && brew services start redis`
    - **Ubuntu/Debian:** `sudo apt update && sudo apt install redis-server && sudo service redis-server start`
@@ -182,74 +183,80 @@ Copy the output base64 string to your `.env` as `DEPLOYER_SECRET_KEY_ENCRYPTED_v
 ```bash
 uvicorn main:app --reload
 ```
-*The API will run at [http://127.0.0.1:8000](http://127.0.0.1:8000).*
+The API runs at http://127.0.0.1:8000.
 
-### 2\. React Frontend
+### 2. React Frontend
 
-Bash
-
-```
+```bash
 cd frontend
 npm install
 npm run dev
 ```
-*The web app will run at http://localhost:5173. You must have the [Freighter browser extension](https://www.freighter.app/) installed to connect your wallet!*
+The web app runs at http://localhost:5173. You must have the [Freighter browser extension](https://www.freighter.app/) installed to connect your wallet.
 
 ---
 
-## 🔒 Security Hardening, Auth, & Rate Limiting
+## Deadline and Auto-Refund
 
-### 1. Secret Key Encryption (AES-256-GCM)
-The backend deployer private key (`DEPLOYER_SECRET_KEY`) is stored encrypted at rest inside environment variables (e.g., `DEPLOYER_SECRET_KEY_ENCRYPTED_v1`) and decrypted dynamically in memory inside a secure context manager. Once used, the memory is explicitly zeroed out to prevent exposure.
+Each commission includes a configurable deadline. The client sets the deadline (1 to 90 days) when they create a commission. The smart contract stores the deadline as a Unix timestamp.
 
-Key rotation is supported via:
-- `DEPLOYER_SECRET_KEY_VERSION` (determines current active deployer version).
-- `DEPLOYER_SECRET_KEY_ENCRYPTED_<version>` (holds version-specific keys).
+### How It Works
 
-### 2. Wallet-Based Authentication (Challenge-Response)
-To authenticate, a user signs a cryptographic challenge using their Stellar wallet:
-1. `GET /auth/challenge?wallet_address=G...` returns a short-lived, unique challenge.
-2. The user signs the challenge using their Stellar private key (e.g., via Freighter/Albedo).
-3. `POST /auth/login` verifies the signature using `stellar_sdk.Keypair.verify()`. If valid, it issues a 24-hour JWT token containing the user's role.
-4. Users logging in with public keys defined in `ADMIN_WALLET_ADDRESSES` are dynamically granted the `admin` role.
+1. The client creates a commission and sets the deadline (default: 14 days).
+2. The backend computes the deadline as a Unix timestamp and passes it to the smart contract during initialization.
+3. The smart contract stores the deadline immutably.
+4. If the artist does not deliver before the deadline, the client calls `client_refund_expired` directly on-chain.
+5. The contract verifies that the current ledger timestamp exceeds the stored deadline.
+6. If expired, the contract returns the full locked USDC to the client.
 
-### 3. Rate Limiting
-- **Global limit:** 60 requests/minute per IP.
-- **Auth endpoints:** 10 requests/minute per IP.
-- **Contract creation (`POST /contracts`):** 5 requests/minute per authenticated user.
+### Key Properties
+
+* The deadline does not block `approve_release`. The client can still release funds after the deadline passes if the artist delivers late.
+* Admin actions (`admin_refund`, `admin_force_release`) are not gated by the deadline. The admin can act at any time.
+* The deadline is immutable after contract initialization. Neither party can change it.
+* The frontend displays a circular countdown timer (Orbit Timer) that visually depletes as time passes.
 
 ---
 
-## ⚙️ Smart Contract Development
+## Smart Contract Development
 
-> **📖 Note:** For a comprehensive breakdown of the smart contract's internal logic, data structures, and function signatures, please refer to the [smart contract documentation](contract/SMART_CONTRACT_API.md).
+> For a comprehensive breakdown of the smart contract internal logic, data structures, and function signatures, refer to the [smart contract documentation](contract/SMART_CONTRACT_API.md).
 
 ### Prerequisites
 
-- Rust toolchain target `wasm32v1-none`
-- Stellar CLI `22.0.0+`
+- Rust toolchain with target `wasm32v1-none`
+- Stellar CLI 22.0.0 or later
 
-### Build & Test
+### Build and Test
 
-Bash
-
-```
-# Compile the contract to an optimised Wasm binary
+```bash
+# Compile the contract to an optimized Wasm binary
 stellar contract build
 
-# Run cargo tests
+# Run cargo tests (7 tests: 3 core + 4 deadline)
 cargo test
 ```
 
-## 📂 Project Structure
+---
+
+## Project Structure
 
 ```text
 ComiSure/
-├── frontend/            # React + Vite application & Wallet SDK integration
-├── backend/             # Python FastAPI dynamic deployer & PostgreSQL tracker
-├── Cargo.toml          # Soroban package dependencies
+├── frontend/            # React + Vite application and Wallet SDK integration
+├── backend/             # Python FastAPI dynamic deployer and PostgreSQL tracker
+├── Cargo.toml           # Soroban package dependencies
 └── contract/
-  ├── lib.rs          # Soroban Escrow Smart Contract code
-  └── test.rs         # Local tests for happy path & unauthorized calls
+    ├── lib.rs           # Soroban Escrow Smart Contract code
+    └── test.rs          # Tests for happy path, unauthorized calls, and deadline
 ```
 
+---
+
+## Users Feedback
+
+We collected feedback from real users who tested the platform. Below are screenshots of user responses.
+
+*Screenshots will be added here.*
+
+[Submit your feedback via our Google Form](https://forms.gle/4f5tieNnnre5tjmR8)
