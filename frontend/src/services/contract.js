@@ -19,17 +19,20 @@ function extractErrorText(error) {
 
   if (typeof error === 'string') return error;
 
-  if (typeof error === 'object') {
-    try {
-      return JSON.stringify(error);
-    } catch {
-      return String(error);
-    }
-  }
-
+  // Check specific properties first (before generic object stringify)
   if (error.response?.data?.detail) return String(error.response.data.detail);
   if (error.message) return String(error.message);
   if (error.resultXdr) return String(error.resultXdr);
+
+  if (typeof error === 'object') {
+    try {
+      const str = JSON.stringify(error);
+      if (str && str !== '{}') return str;
+    } catch {
+      // fall through
+    }
+  }
+
   return String(error);
 }
 
