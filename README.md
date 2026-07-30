@@ -34,10 +34,10 @@ ComiSure replaces informal, trust-based payment channels with a decentralized So
 
 ## Project Demo Video
 
-[![ComiSure Project Demo](https://img.shields.io/badge/YouTube-Demo%20Video-red?style=for-the-badge&logo=youtube)](https://youtu.be/71GF2m4M4fo)
+[![ComiSure Project Demo](https://img.shields.io/badge/YouTube-Demo%20Video-red?style=for-the-badge&logo=youtube)](https://youtu.be/cd4Rz2XygKg)
 
 Click the badge above or navigate to the following link to view the live system walkthrough and features demonstration:
-**[Watch the ComiSure Demo Video on YouTube](https://youtu.be/71GF2m4M4fo)**
+**[Watch the ComiSure Demo Video on YouTube](https://youtu.be/cd4Rz2XygKg)**
 
 ---
 
