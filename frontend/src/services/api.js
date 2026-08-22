@@ -31,3 +31,8 @@ export const disputeService = {
   getAll: () => api.get('/disputes').then(res => res.data),
   resolve: (id, resolution) => api.patch(`/disputes/${id}/resolve?resolution=${resolution}`).then(res => res.data),
 };
+
+export const milestoneService = {
+  getMilestones: (id) => api.get(`/contracts/${id}/milestones`).then(res => res.data),
+  approve: (id, index) => api.post(`/contracts/${id}/milestones/${index}/approve`).then(res => res.data),
+};
