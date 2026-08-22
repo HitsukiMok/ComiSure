@@ -1,0 +1,16 @@
+[package]
+name        = "comi_sure_milestone"
+version     = "0.1.0"
+edition     = "2021"
+description = "Milestone-based USDC escrow for freelance digital art commissions on Stellar."
+license     = "MIT"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+soroban-sdk = { version = "22.0.0" }
+
+[dev-dependencies]
+soroban-sdk = { version = "22.0.0", features = ["testutils"] }
+proptest = "1"
