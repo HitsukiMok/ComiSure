@@ -12,7 +12,7 @@ import models
 from database import create_db_and_tables, get_session
 from models import (
     Commission, CommissionCreate, CommissionRead,
-    Dispute, DisputeCreate, DisputeRead, User
+    Dispute, DisputeCreate, DisputeRead, User, Milestone, MilestoneRead
 )
 import stellar_utils
 from middleware.auth import (
@@ -71,6 +71,11 @@ def on_startup():
         import sys
         print(f"❌ FATAL STARTUP CHECK FAILED: {e}")
         sys.exit(1)
+
+    # Verify WASM files exist (non-fatal — some environments may not have them locally)
+    for wasm_path in (stellar_utils.WASM_PATH, stellar_utils.MILESTONE_WASM_PATH):
+        if not os.path.exists(wasm_path):
+            logger.error(f"WASM file missing: {wasm_path}")
         
     create_db_and_tables()
 
@@ -195,8 +200,19 @@ def create_contract(
             status_code=403, 
             detail="Forbidden: Client address in contract does not match authenticated user."
         )
+    
+    # Validate milestone configuration when commission_type == "milestone"
+    if commission.commission_type == "milestone":
+        if not commission.milestones:
+            raise HTTPException(status_code=400, detail="Milestones are required for milestone-type commissions.")
+        if len(commission.milestones) < 2 or len(commission.milestones) > 10:
+            raise HTTPException(status_code=400, detail="Milestone count must be between 2 and 10.")
+        if any(m.percentage <= 0 for m in commission.milestones):
+            raise HTTPException(status_code=400, detail="Each milestone percentage must be greater than zero.")
+        if sum(m.percentage for m in commission.milestones) != 100:
+            raise HTTPException(status_code=400, detail="Milestone percentages must sum to 100.")
         
-    db_commission = Commission.model_validate(commission)
+    db_commission = Commission.model_validate(commission.model_dump(exclude={"milestones"}))
     db_commission.title = clean_title
     db_commission.description = clean_desc
     
@@ -210,12 +226,21 @@ def create_contract(
     
     # Trigger smart contract deployment
     try:
-        contract_id = stellar_utils.deploy_and_initialize_escrow(
-            client_address=db_commission.client_address,
-            artist_address=db_commission.artist_address,
-            version=active_version,
-            deadline_unix=deadline_unix
-        )
+        if db_commission.commission_type == "milestone":
+            contract_id = stellar_utils.deploy_and_initialize_milestone_escrow(
+                client_address=db_commission.client_address,
+                artist_address=db_commission.artist_address,
+                milestones=[{"label": m.label, "percentage": m.percentage} for m in commission.milestones],
+                version=active_version,
+                deadline_unix=deadline_unix,
+            )
+        else:
+            contract_id = stellar_utils.deploy_and_initialize_escrow(
+                client_address=db_commission.client_address,
+                artist_address=db_commission.artist_address,
+                version=active_version,
+                deadline_unix=deadline_unix
+            )
         db_commission.contract_id = contract_id
     except Exception as e:
         logger.error(f"Contract deployment failed: {e}")
@@ -228,6 +253,20 @@ def create_contract(
     session.add(db_commission)
     session.commit()
     session.refresh(db_commission)
+    
+    # Store milestone rows for milestone-type commissions
+    if db_commission.commission_type == "milestone" and commission.milestones:
+        for idx, m in enumerate(commission.milestones):
+            milestone_row = Milestone(
+                commission_id=db_commission.id,
+                index=idx,
+                label=m.label,
+                percentage=m.percentage,
+                status="Pending",
+            )
+            session.add(milestone_row)
+        session.commit()
+    
     return db_commission
 
 @app.get("/contracts", response_model=List[CommissionRead])
@@ -510,3 +549,111 @@ def resolve_dispute(
         
     session.commit()
     return {"status": "success", "dispute_status": db_dispute.status}
+
+
+# Milestone Management Endpoints
+@app.get("/contracts/{contract_id}/milestones", response_model=List[MilestoneRead])
+def get_milestones(
+    contract_id: int,
+    request: Request,
+    session: Session = Depends(get_session),
+    current_user: Optional[CurrentUser] = Depends(get_current_user_optional)
+):
+    """Returns milestone array with statuses, released total, and unreleased amount."""
+    commission = session.get(Commission, contract_id)
+    if not commission or commission.commission_type != "milestone":
+        raise HTTPException(status_code=404, detail="Milestone commission not found")
+
+    # Access check: participant or admin (if authenticated)
+    if current_user and current_user.role != ROLE_ADMIN:
+        if (commission.client_address != current_user.wallet_address and
+                commission.artist_address != current_user.wallet_address):
+            raise HTTPException(status_code=403, detail="Access denied.")
+
+    milestones = session.exec(
+        select(Milestone).where(Milestone.commission_id == contract_id).order_by(Milestone.index)
+    ).all()
+
+    # Compute released/unreleased from approved milestone percentages
+    released_total = sum(
+        m.percentage * commission.amount_usdc // 100
+        for m in milestones if m.status == "Approved"
+    )
+    unreleased_amount = commission.amount_usdc - released_total
+
+    # Attach summary as response headers (JSON body is the milestone list)
+    from fastapi.responses import JSONResponse
+    milestone_dicts = [MilestoneRead.model_validate(m).model_dump() for m in milestones]
+    return JSONResponse(content={
+        "milestones": milestone_dicts,
+        "released_total": released_total,
+        "unreleased_amount": unreleased_amount,
+    })
+
+
+@app.post("/contracts/{contract_id}/milestones/{index}/approve")
+def approve_milestone(
+    contract_id: int,
+    index: int,
+    request: Request,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_user)
+):
+    """
+    Syncs off-chain milestone status after the client has signed approve_milestone on-chain.
+    Only the commission client can call this endpoint.
+    """
+    commission = session.get(Commission, contract_id)
+    if not commission or commission.commission_type != "milestone":
+        raise HTTPException(status_code=404, detail="Milestone commission not found")
+
+    if commission.client_address != current_user.wallet_address:
+        raise HTTPException(status_code=403, detail="Only the client can approve milestones.")
+
+    milestones = session.exec(
+        select(Milestone).where(Milestone.commission_id == contract_id).order_by(Milestone.index)
+    ).all()
+
+    if index < 0 or index >= len(milestones):
+        raise HTTPException(status_code=400, detail="Invalid milestone index.")
+
+    target = milestones[index]
+    if target.status != "Pending":
+        raise HTTPException(status_code=400, detail="Milestone already processed.")
+
+    # Verify on-chain state — the client must have already signed approve_milestone on-chain.
+    # This mirrors the existing release_contract pattern: check on-chain state before DB update.
+    try:
+        on_chain_state = stellar_utils.get_contract_state_on_chain(
+            commission.contract_id,
+            version=commission.deployer_key_version
+        )
+        # After on-chain approval the state should be PartiallyReleased or Released
+        if on_chain_state not in ("PartiallyReleased", "Released"):
+            raise HTTPException(
+                status_code=400,
+                detail=f"On-chain state is '{on_chain_state}'. Approve the milestone on-chain via your wallet first."
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"On-chain milestone verification failed: {e}")
+        raise HTTPException(
+            status_code=400,
+            detail="Unable to verify on-chain state. Please ensure you have approved the milestone on-chain first."
+        )
+
+    # Update DB milestone status
+    target.status = "Approved"
+    session.add(target)
+
+    # Update commission status based on milestone progress
+    all_approved = all(m.status == "Approved" for m in milestones)
+    if all_approved:
+        commission.status = "Released"
+    else:
+        commission.status = "PartiallyReleased"
+    session.add(commission)
+    session.commit()
+
+    return {"status": "success", "milestone_index": index, "commission_status": commission.status}
