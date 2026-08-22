@@ -6,13 +6,16 @@ import {
   getContractAmount,
   depositFunds,
   approveRelease,
+  approveMilestone,
   friendlyContractError,
 } from '../services/contract';
-import { commissionService } from '../services/api';
+import { commissionService, milestoneService } from '../services/api';
 import { ShieldCheck, Loader2, ExternalLink, RefreshCw, Plus, ArrowLeft, CheckCircle2, XCircle } from 'lucide-react';
 import StateBadge from '../components/StateBadge';
 import OrbitTimer from '../components/OrbitTimer';
 import OrbitTimerCompact from '../components/OrbitTimerCompact';
+import MilestoneBuilder from '../components/MilestoneBuilder';
+import MilestoneProgress from '../components/MilestoneProgress';
 
 // ─── Transaction Toast ────────────────────────────────────────────────────────
 function TxToast({ tx, onClose }) {
@@ -198,6 +201,8 @@ export default function Dashboard() {
 function CreateCommissionView({ address, onCancel, onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [commissionType, setCommissionType] = useState('single');
+  const [milestones, setMilestones] = useState([{ label: '', percentage: 0 }, { label: '', percentage: 0 }]);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -205,6 +210,13 @@ function CreateCommissionView({ address, onCancel, onSuccess }) {
     amount_usdc: '10',
     deadline_days: '14',
   });
+
+  const milestoneTotal = milestones.reduce((sum, m) => sum + (Number(m.percentage) || 0), 0);
+  const milestoneValid = commissionType !== 'milestone' || (
+    milestoneTotal === 100 &&
+    milestones.length >= 2 &&
+    milestones.every(m => m.percentage > 0)
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -218,7 +230,11 @@ function CreateCommissionView({ address, onCancel, onSuccess }) {
         artist_address: formData.artist_address,
         amount_usdc: parseInt(formData.amount_usdc, 10),
         deadline_days: parseInt(formData.deadline_days, 10),
+        commission_type: commissionType,
       };
+      if (commissionType === 'milestone') {
+        payload.milestones = milestones.map(m => ({ label: m.label, percentage: m.percentage }));
+      }
       const newCommission = await commissionService.create(payload);
       onSuccess(newCommission);
     } catch (e) {
@@ -265,6 +281,43 @@ function CreateCommissionView({ address, onCancel, onSuccess }) {
             placeholder="Provide references, style notes, dimensions..."
           />
         </div>
+        {/* Commission Type Selector */}
+        <div>
+          <label className="block text-sm font-medium text-ink mb-2">Payment Type</label>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setCommissionType('single')}
+              className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-btn border transition-colors ${
+                commissionType === 'single'
+                  ? 'bg-action text-action-text border-action'
+                  : 'bg-canvas text-graphite border-border hover:border-accent'
+              }`}
+            >
+              Single Payment
+            </button>
+            <button
+              type="button"
+              onClick={() => setCommissionType('milestone')}
+              className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-btn border transition-colors ${
+                commissionType === 'milestone'
+                  ? 'bg-action text-action-text border-action'
+                  : 'bg-canvas text-graphite border-border hover:border-accent'
+              }`}
+            >
+              Milestone-Based
+            </button>
+          </div>
+        </div>
+
+        {/* Milestone Builder (shown only for milestone type) */}
+        {commissionType === 'milestone' && (
+          <div>
+            <label className="block text-sm font-medium text-ink mb-2">Milestones</label>
+            <MilestoneBuilder milestones={milestones} setMilestones={setMilestones} />
+          </div>
+        )}
+
         <div>
           <label className="block text-sm font-medium text-ink mb-2">Artist Stellar Address</label>
           <input
@@ -305,7 +358,7 @@ function CreateCommissionView({ address, onCancel, onSuccess }) {
             Cancel
           </button>
           <button
-            type="submit" disabled={loading}
+            type="submit" disabled={loading || !milestoneValid}
             className="flex-[2] flex gap-2 justify-center items-center px-4 py-3 bg-action text-action-text font-medium rounded-btn shadow-button hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             {loading ? <><Loader2 className="w-5 h-5 animate-spin" /> Deploying...</> : "Deploy & Initialize"}
@@ -320,6 +373,8 @@ function CreateCommissionView({ address, onCancel, onSuccess }) {
 function ActiveEscrowView({ commission, walletAddress }) {
   const [contractState, setContractState] = useState(null);
   const [lockedAmount, setLockedAmount] = useState(0n);
+  const [milestones, setMilestones] = useState([]);
+  const [releasedTotal, setReleasedTotal] = useState(0n);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
   const [toast, setToast] = useState(null);
@@ -327,6 +382,8 @@ function ActiveEscrowView({ commission, walletAddress }) {
   const contractId = commission.contract_id;
   const createdAt = commission.created_at ? Math.floor(new Date(commission.created_at).getTime() / 1000) : 0;
   const deadlineAt = commission.deadline_at ? Math.floor(new Date(commission.deadline_at).getTime() / 1000) : 0;
+  const isMilestone = commission.commission_type === 'milestone';
+  const isClient = commission.client_address === walletAddress;
 
   const fetchState = useCallback(async () => {
     if (!walletAddress || !contractId) return;
@@ -338,13 +395,23 @@ function ActiveEscrowView({ commission, walletAddress }) {
       ]);
       setContractState(state);
       setLockedAmount(amount);
+
+      if (isMilestone) {
+        try {
+          const msData = await milestoneService.getMilestones(commission.id);
+          setMilestones(msData.milestones || msData || []);
+          if (msData.released_total != null) setReleasedTotal(BigInt(msData.released_total));
+        } catch (e) {
+          console.error('Failed to fetch milestones:', e);
+        }
+      }
     } catch (e) {
       console.error('Failed to fetch contract state:', e);
       setContractState('Unknown');
     } finally {
       setFetching(false);
     }
-  }, [walletAddress, contractId]);
+  }, [walletAddress, contractId, isMilestone, commission.id]);
 
   useEffect(() => { fetchState(); }, [fetchState]);
 
@@ -373,6 +440,22 @@ function ActiveEscrowView({ commission, walletAddress }) {
     } catch (e) {
       console.error(e);
       setToast({ type: 'error', message: friendlyContractError(e, { actorLabel: 'The backend service' }) });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApproveMilestone = async (index) => {
+    setLoading(true);
+    setToast(null);
+    try {
+      const result = await approveMilestone(contractId, walletAddress, index);
+      await milestoneService.approve(commission.id, index);
+      setToast({ type: 'success', message: `Milestone ${index + 1} approved!`, explorerUrl: result.explorerUrl });
+      await fetchState();
+    } catch (e) {
+      console.error(e);
+      setToast({ type: 'error', message: friendlyContractError(e, { actorLabel: 'The client wallet' }) });
     } finally {
       setLoading(false);
     }
@@ -447,19 +530,33 @@ function ActiveEscrowView({ commission, walletAddress }) {
           </button>
         </motion.div>
 
-        {/* Approve Release */}
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="p-6 rounded-card bg-surface">
-          <h2 className="text-subheading font-medium text-ink mb-1">Approve & Release</h2>
-          <p className="text-sm text-graphite mb-4">Release locked funds to <strong className="text-ink">{commission.artist_address?.slice(0, 6)}...</strong></p>
-          <button
-            disabled={loading || contractState !== 'Funded'}
-            onClick={() => invoke(() => approveRelease(contractId, walletAddress), 'Approve Release')}
-            className="w-full px-4 py-3 bg-status-released text-ink font-medium rounded-btn hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-            Approve & Release
-          </button>
-        </motion.div>
+        {/* Approve Release — single-payment or Milestone Progress */}
+        {isMilestone ? (
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="p-6 rounded-card bg-surface">
+            <h2 className="text-subheading font-medium text-ink mb-4">Milestone Progress</h2>
+            <MilestoneProgress
+              milestones={milestones}
+              totalAmount={lockedAmount}
+              releasedTotal={releasedTotal}
+              contractState={contractState}
+              isClient={isClient}
+              onApprove={handleApproveMilestone}
+            />
+          </motion.div>
+        ) : (
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="p-6 rounded-card bg-surface">
+            <h2 className="text-subheading font-medium text-ink mb-1">Approve & Release</h2>
+            <p className="text-sm text-graphite mb-4">Release locked funds to <strong className="text-ink">{commission.artist_address?.slice(0, 6)}...</strong></p>
+            <button
+              disabled={loading || contractState !== 'Funded'}
+              onClick={() => invoke(() => approveRelease(contractId, walletAddress), 'Approve Release')}
+              className="w-full px-4 py-3 bg-status-released text-ink font-medium rounded-btn hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+              Approve & Release
+            </button>
+          </motion.div>
+        )}
 
         {/* Admin Actions */}
         <div className="md:col-span-2 mt-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
