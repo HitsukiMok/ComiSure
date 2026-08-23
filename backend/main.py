@@ -1,9 +1,10 @@
 import os
+import asyncio
 import logging
 from typing import List, Optional
 from datetime import datetime, timedelta
 from pydantic import BaseModel
-from fastapi import FastAPI, Depends, HTTPException, Request, Response
+from fastapi import FastAPI, BackgroundTasks, Depends, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select
 from sqlalchemy import func
@@ -27,6 +28,8 @@ from middleware.auth import (
 from middleware.rate_limit import limiter, rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
+from routers.notifications import router as notifications_router
+from services.notifications import dispatch_notification, start_deadline_checker
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +48,9 @@ app.add_middleware(
 app.add_middleware(JWTTokenMiddleware)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
+
+# Register notification router
+app.include_router(notifications_router)
 
 # Input Validation Helpers
 def validate_stellar_address(address: str):
@@ -81,6 +87,9 @@ def on_startup():
             logger.error(f"WASM file missing: {wasm_path}")
         
     create_db_and_tables()
+
+    # Start deadline notification checker background loop
+    asyncio.get_event_loop().create_task(start_deadline_checker())
 
 @app.get("/")
 def read_root(request: Request):
@@ -326,6 +335,7 @@ def read_contract(
 def release_contract(
     contract_id: int,
     request: Request,
+    background_tasks: BackgroundTasks,
     session: Session = Depends(get_session),
     current_user: Optional[CurrentUser] = Depends(get_current_user_optional)
 ):
@@ -382,12 +392,14 @@ def release_contract(
             logger.error(f"Admin force release failed: {e}")
             raise HTTPException(status_code=500, detail="Admin force release transaction failed.")
             
+    background_tasks.add_task(dispatch_notification, "Released", db_commission, session)
     return {"status": "success"}
 
 @app.post("/contracts/{contract_id}/refund")
 def refund_contract(
     contract_id: int,
     request: Request,
+    background_tasks: BackgroundTasks,
     session: Session = Depends(get_session),
     admin_user: CurrentUser = Depends(require_admin)
 ):
@@ -411,12 +423,14 @@ def refund_contract(
         logger.error(f"Admin refund failed: {e}")
         raise HTTPException(status_code=500, detail="Admin refund transaction failed.")
         
+    background_tasks.add_task(dispatch_notification, "Refunded", db_commission, session)
     return {"status": "success"}
 
 @app.post("/contracts/{contract_id}/client-refund")
 def client_refund_expired(
     contract_id: int,
     request: Request,
+    background_tasks: BackgroundTasks,
     session: Session = Depends(get_session),
     current_user: Optional[CurrentUser] = Depends(get_current_user_optional)
 ):
@@ -460,6 +474,7 @@ def client_refund_expired(
     db_commission.status = "Refunded"
     session.add(db_commission)
     session.commit()
+    background_tasks.add_task(dispatch_notification, "Refunded", db_commission, session)
     return {"status": "success"}
 
 # Disputes Resolution Management
@@ -467,6 +482,7 @@ def client_refund_expired(
 def create_dispute(
     dispute: DisputeCreate, 
     request: Request,
+    background_tasks: BackgroundTasks,
     session: Session = Depends(get_session),
     current_user: CurrentUser = Depends(get_current_user)
 ):
@@ -497,6 +513,7 @@ def create_dispute(
     
     session.commit()
     session.refresh(db_dispute)
+    background_tasks.add_task(dispatch_notification, "Disputed", db_commission, session, db_dispute)
     return db_dispute
 
 @app.get("/disputes", response_model=List[DisputeRead])
@@ -522,6 +539,7 @@ def resolve_dispute(
     dispute_id: int, 
     resolution: str, 
     request: Request,
+    background_tasks: BackgroundTasks,
     session: Session = Depends(get_session),
     admin_user: CurrentUser = Depends(require_admin)
 ):
@@ -551,6 +569,7 @@ def resolve_dispute(
             raise HTTPException(status_code=500, detail=f"On-chain resolution failed: {e}")
         
     session.commit()
+    background_tasks.add_task(dispatch_notification, "Dispute_Resolved", db_commission, session)
     return {"status": "success", "dispute_status": db_dispute.status}
 
 
