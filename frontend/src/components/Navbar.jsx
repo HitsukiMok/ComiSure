@@ -14,6 +14,7 @@ export default function Navbar() {
 
   const navLinks = [
     { to: '/dashboard', label: 'Dashboard' },
+    { to: '/notifications', label: 'Notifications' },
     { to: '/admin', label: 'Admin' },
   ];
 
