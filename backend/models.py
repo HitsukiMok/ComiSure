@@ -2,6 +2,7 @@ from typing import Optional, List
 from sqlmodel import Field, SQLModel
 from pydantic import BaseModel
 from datetime import datetime
+from sqlalchemy import UniqueConstraint
 
 class CommissionBase(SQLModel):
     title: str = Field(index=True)
@@ -74,3 +75,31 @@ class Milestone(MilestoneBase, table=True):
 
 class MilestoneRead(MilestoneBase):
     id: int
+
+
+class ReviewBase(SQLModel):
+    commission_id: int = Field(foreign_key="commission.id", index=True)
+    reviewer_address: str = Field(index=True)
+    reviewee_address: str = Field(index=True)
+    star_rating: int = Field(ge=1, le=5)
+    text: Optional[str] = Field(default=None, max_length=500)
+
+
+class Review(ReviewBase, table=True):
+    __table_args__ = (
+        UniqueConstraint("commission_id", "reviewer_address", name="uq_review_commission_reviewer"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class ReviewCreate(SQLModel):
+    commission_id: int
+    star_rating: int = Field(ge=1, le=5)
+    text: Optional[str] = Field(default=None, max_length=500)
+
+
+class ReviewRead(ReviewBase):
+    id: int
+    created_at: datetime
