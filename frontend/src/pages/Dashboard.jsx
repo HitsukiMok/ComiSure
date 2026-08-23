@@ -9,13 +9,16 @@ import {
   approveMilestone,
   friendlyContractError,
 } from '../services/contract';
-import { commissionService, milestoneService } from '../services/api';
+import { commissionService, milestoneService, reviewService } from '../services/api';
 import { ShieldCheck, Loader2, ExternalLink, RefreshCw, Plus, ArrowLeft, CheckCircle2, XCircle } from 'lucide-react';
 import StateBadge from '../components/StateBadge';
 import OrbitTimer from '../components/OrbitTimer';
 import OrbitTimerCompact from '../components/OrbitTimerCompact';
 import MilestoneBuilder from '../components/MilestoneBuilder';
 import MilestoneProgress from '../components/MilestoneProgress';
+import ReviewForm from '../components/ReviewForm';
+import ReviewList from '../components/ReviewList';
+import ReputationBadge from '../components/ReputationBadge';
 
 // ─── Transaction Toast ────────────────────────────────────────────────────────
 function TxToast({ tx, onClose }) {
@@ -379,11 +382,16 @@ function ActiveEscrowView({ commission, walletAddress }) {
   const [fetching, setFetching] = useState(false);
   const [toast, setToast] = useState(null);
 
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [hasReviewed, setHasReviewed] = useState(false);
+
   const contractId = commission.contract_id;
   const createdAt = commission.created_at ? Math.floor(new Date(commission.created_at).getTime() / 1000) : 0;
   const deadlineAt = commission.deadline_at ? Math.floor(new Date(commission.deadline_at).getTime() / 1000) : 0;
   const isMilestone = commission.commission_type === 'milestone';
   const isClient = commission.client_address === walletAddress;
+  const counterpartyAddress = isClient ? commission.artist_address : commission.client_address;
 
   const fetchState = useCallback(async () => {
     if (!walletAddress || !contractId) return;
@@ -414,6 +422,38 @@ function ActiveEscrowView({ commission, walletAddress }) {
   }, [walletAddress, contractId, isMilestone, commission.id]);
 
   useEffect(() => { fetchState(); }, [fetchState]);
+
+  const isTerminal = contractState === 'Released' || contractState === 'Refunded';
+  const isParticipant = walletAddress === commission.client_address || walletAddress === commission.artist_address;
+
+  const fetchReviews = useCallback(async () => {
+    if (!isTerminal) return;
+    setReviewsLoading(true);
+    try {
+      // Fetch reviews for both participants to find commission-relevant ones
+      const [forArtist, forClient] = await Promise.all([
+        reviewService.getForWallet(commission.artist_address, { limit: 100 }),
+        reviewService.getForWallet(commission.client_address, { limit: 100 }),
+      ]);
+      const allReviews = [...(forArtist.reviews || []), ...(forClient.reviews || [])];
+      const commissionReviews = allReviews.filter(r => r.commission_id === commission.id);
+      // Deduplicate by id
+      const unique = Array.from(new Map(commissionReviews.map(r => [r.id, r])).values());
+      // Add reviewer_role info
+      const enriched = unique.map(r => ({
+        ...r,
+        reviewer_role: r.reviewer_address === commission.client_address ? 'client' : 'artist',
+      }));
+      setReviews(enriched);
+      setHasReviewed(enriched.some(r => r.reviewer_address === walletAddress));
+    } catch (e) {
+      console.error('Failed to fetch reviews:', e);
+    } finally {
+      setReviewsLoading(false);
+    }
+  }, [isTerminal, isClient, commission.artist_address, commission.client_address, commission.id, walletAddress]);
+
+  useEffect(() => { fetchReviews(); }, [fetchReviews]);
 
   const invoke = async (fn, label) => {
     setLoading(true);
@@ -483,6 +523,11 @@ function ActiveEscrowView({ commission, walletAddress }) {
                 {displayId.slice(0, 12)}...{displayId.slice(-6)} <ExternalLink className="w-3 h-3" />
               </a>
             </div>
+            <div className="mt-2 flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-fog font-mono">{isClient ? 'Artist' : 'Client'}</span>
+              <span className="text-sm font-mono text-ink">{counterpartyAddress?.slice(0, 8)}…{counterpartyAddress?.slice(-4)}</span>
+              <ReputationBadge walletAddress={counterpartyAddress} />
+            </div>
           </div>
           <div className="flex flex-col items-end gap-2">
             <button onClick={fetchState} disabled={fetching} className="text-xs text-fog hover:text-ink flex items-center gap-1 mb-1">
@@ -533,7 +578,8 @@ function ActiveEscrowView({ commission, walletAddress }) {
         {/* Approve Release — single-payment or Milestone Progress */}
         {isMilestone ? (
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="p-6 rounded-card bg-surface">
-            <h2 className="text-subheading font-medium text-ink mb-4">Milestone Progress</h2>
+            <h2 className="text-subheading font-medium text-ink mb-2">Milestone Progress</h2>
+            <div className="mb-4"><ReputationBadge walletAddress={counterpartyAddress} /></div>
             <MilestoneProgress
               milestones={milestones}
               totalAmount={lockedAmount}
@@ -546,7 +592,8 @@ function ActiveEscrowView({ commission, walletAddress }) {
         ) : (
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="p-6 rounded-card bg-surface">
             <h2 className="text-subheading font-medium text-ink mb-1">Approve & Release</h2>
-            <p className="text-sm text-graphite mb-4">Release locked funds to <strong className="text-ink">{commission.artist_address?.slice(0, 6)}...</strong></p>
+            <p className="text-sm text-graphite mb-2">Release locked funds to <strong className="text-ink">{commission.artist_address?.slice(0, 6)}...</strong></p>
+            <div className="mb-4"><ReputationBadge walletAddress={counterpartyAddress} /></div>
             <button
               disabled={loading || contractState !== 'Funded'}
               onClick={() => invoke(() => approveRelease(contractId, walletAddress), 'Approve Release')}
@@ -578,6 +625,23 @@ function ActiveEscrowView({ commission, walletAddress }) {
           </button>
         </div>
       </div>
+
+      {/* Reviews Section — shown for terminal commissions */}
+      {isTerminal && (
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="mt-8 p-6 rounded-card bg-surface">
+          <h2 className="text-subheading font-medium text-ink mb-4">Reviews</h2>
+
+          {/* Review submission form: show only if participant and hasn't reviewed */}
+          {isParticipant && !hasReviewed && (
+            <div className="mb-6">
+              <ReviewForm commissionId={commission.id} onSubmitted={fetchReviews} />
+            </div>
+          )}
+
+          {/* Existing reviews for this commission */}
+          <ReviewList reviews={reviews} loading={reviewsLoading} />
+        </motion.div>
+      )}
     </>
   );
 }
