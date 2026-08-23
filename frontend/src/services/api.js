@@ -43,3 +43,10 @@ export const reviewService = {
   getReputation: (wallet, config) => api.get(`/reputation/${wallet}`, config).then(res => res.data),
   adminDelete: (reviewId) => api.delete(`/reviews/${reviewId}`).then(res => res.data),
 };
+
+export const notificationService = {
+  getPreferences: () => api.get('/notifications/preferences').then(r => r.data),
+  savePreferences: (data) => api.put('/notifications/preferences', data).then(r => r.data),
+  registerSubscription: (sub) => api.post('/notifications/subscriptions', sub).then(r => r.data),
+  deleteSubscription: (id) => api.delete(`/notifications/subscriptions/${id}`),
+};
