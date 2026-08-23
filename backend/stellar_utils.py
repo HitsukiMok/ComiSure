@@ -9,9 +9,10 @@ logger = logging.getLogger(__name__)
 USDC_TOKEN = "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA"
 NETWORK = "testnet"
 
-# Resolve absolute path to wasm file
+# Resolve absolute path to wasm files
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 WASM_PATH = os.path.join(BASE_DIR, "comi_sure.wasm")
+MILESTONE_WASM_PATH = os.path.join(BASE_DIR, "comi_sure_milestone.wasm")
 
 # On Windows, subprocess needs shell=True for PATH resolution.
 # On Linux/Docker, shell=True with a list silently drops all arguments.
@@ -192,3 +193,75 @@ def get_contract_state_on_chain(contract_id: str, version: str = None) -> str:
     output = res.stdout.strip()
     normalized = output.replace('"', '').strip()
     return normalized
+
+
+def deploy_and_initialize_milestone_escrow(
+    client_address: str,
+    artist_address: str,
+    milestones: list,  # [{"label": "Sketch", "percentage": 30}, ...]
+    version: str = None,
+    deadline_unix: int = None,
+) -> str:
+    """
+    Deploys a new milestone escrow contract and initializes it with
+    participant addresses and the milestone configuration array.
+    """
+    import json
+
+    admin_address = get_deployer_address(version)
+    source_arg = DEPLOYER_IDENTITY
+
+    print(f"Deploying milestone contract for Client: {client_address} & Artist: {artist_address} ...")
+
+    # 1. Deploy the milestone contract
+    deploy_cmd = [
+        "stellar", "contract", "deploy",
+        "--wasm", MILESTONE_WASM_PATH,
+        "--source", source_arg,
+        "--network", NETWORK,
+    ]
+    deploy_res = _run(deploy_cmd)
+
+    if deploy_res.returncode != 0:
+        raise Exception(f"Milestone deployment failed: {deploy_res.stderr}\n{deploy_res.stdout}")
+
+    contract_id = deploy_res.stdout.strip()
+
+    # Verify contract ID format (56 chars, starts with 'C')
+    if not contract_id.startswith("C") or len(contract_id) != 56:
+        lines = contract_id.splitlines()
+        for line in lines:
+            if line.startswith("C") and len(line) == 56:
+                contract_id = line
+                break
+        else:
+            raise Exception(f"Invalid contract ID extracted: {contract_id}")
+
+    print(f"Milestone contract deployed: {contract_id}")
+
+    # 2. Initialize with milestone JSON arg
+    milestones_json = json.dumps([
+        {"label": m["label"], "percentage": m["percentage"], "status": "Pending"}
+        for m in milestones
+    ])
+
+    init_cmd = [
+        "stellar", "contract", "invoke",
+        "--id", contract_id,
+        "--source", source_arg,
+        "--network", NETWORK,
+        "--", "initialize",
+        "--client", client_address,
+        "--artist", artist_address,
+        "--admin", admin_address,
+        "--token", USDC_TOKEN,
+        "--deadline", str(deadline_unix),
+        "--milestones", milestones_json,
+    ]
+
+    init_res = _run(init_cmd)
+    if init_res.returncode != 0:
+        raise Exception(f"Milestone initialization failed: {init_res.stderr}\n{init_res.stdout}")
+
+    print(f"Milestone contract {contract_id} initialized with {len(milestones)} milestones!")
+    return contract_id
