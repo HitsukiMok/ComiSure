@@ -36,3 +36,10 @@ export const milestoneService = {
   getMilestones: (id) => api.get(`/contracts/${id}/milestones`).then(res => res.data),
   approve: (id, index) => api.post(`/contracts/${id}/milestones/${index}/approve`).then(res => res.data),
 };
+
+export const reviewService = {
+  submit: (data) => api.post('/reviews', data).then(res => res.data),
+  getForWallet: (wallet, { offset, limit } = {}) => api.get(`/reviews/${wallet}`, { params: { offset, limit } }).then(res => res.data),
+  getReputation: (wallet) => api.get(`/reputation/${wallet}`).then(res => res.data),
+  adminDelete: (reviewId) => api.delete(`/reviews/${reviewId}`).then(res => res.data),
+};
