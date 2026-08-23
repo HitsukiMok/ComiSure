@@ -40,6 +40,6 @@ export const milestoneService = {
 export const reviewService = {
   submit: (data) => api.post('/reviews', data).then(res => res.data),
   getForWallet: (wallet, { offset, limit } = {}) => api.get(`/reviews/${wallet}`, { params: { offset, limit } }).then(res => res.data),
-  getReputation: (wallet) => api.get(`/reputation/${wallet}`).then(res => res.data),
+  getReputation: (wallet, config) => api.get(`/reputation/${wallet}`, config).then(res => res.data),
   adminDelete: (reviewId) => api.delete(`/reviews/${reviewId}`).then(res => res.data),
 };
