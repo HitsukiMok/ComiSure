@@ -103,3 +103,46 @@ class ReviewCreate(SQLModel):
 class ReviewRead(ReviewBase):
     id: int
     created_at: datetime
+
+
+# ─── Notification Models ───────────────────────────────────────────────────────
+
+class NotificationPreference(SQLModel, table=True):
+    wallet_address: str = Field(primary_key=True, foreign_key="user.wallet_address")
+    email_enabled: bool = Field(default=False)
+    push_enabled: bool = Field(default=False)
+    email_address: Optional[str] = Field(default=None)
+
+
+class NotificationPreferenceUpdate(SQLModel):
+    email_enabled: Optional[bool] = None
+    push_enabled: Optional[bool] = None
+    email_address: Optional[str] = None
+
+
+class NotificationPreferenceRead(SQLModel):
+    wallet_address: str
+    email_enabled: bool
+    push_enabled: bool
+    email_address: Optional[str] = None
+
+
+class PushSubscription(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    wallet_address: str = Field(foreign_key="user.wallet_address", index=True)
+    endpoint: str
+    p256dh: str
+    auth: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class PushSubscriptionCreate(SQLModel):
+    endpoint: str
+    p256dh: str
+    auth: str
+
+
+class PushSubscriptionRead(SQLModel):
+    id: int
+    endpoint: str
+    created_at: datetime
