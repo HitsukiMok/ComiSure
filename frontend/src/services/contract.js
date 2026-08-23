@@ -75,6 +75,16 @@ function friendlyContractError(error, context = {}) {
     return 'Only the registered client wallet can claim an expired refund.';
   }
 
+  if (lower.includes('milestone already approved')) {
+    return 'This milestone has already been approved.';
+  }
+  if (lower.includes('milestone index out of range')) {
+    return 'Invalid milestone. Please refresh and try again.';
+  }
+  if (lower.includes('approve only allowed in funded or partiallyreleased')) {
+    return 'This contract is not in a state that allows milestone approval.';
+  }
+
   if (lower.includes('hosterror') || lower.includes('error(contract')) {
     return `On-chain contract error: ${raw}`;
   }
@@ -279,6 +289,45 @@ export async function clientRefundExpired(contractId, callerAddress) {
 export async function getContractDeadline(contractId, callerAddress) {
   const contract = new Contract(contractId);
   const scVal = await simulateReadOnly(callerAddress, contract.call('get_deadline'));
+  if (!scVal) return 0n;
+  return BigInt(scValToNative(scVal));
+}
+
+/**
+ * Client approves a single milestone, releasing that milestone's percentage to the artist.
+ * @param {string} contractId     - Milestone Soroban Contract ID
+ * @param {string} callerAddress  - Stellar G... address of the client
+ * @param {number} milestoneIndex - Zero-based milestone index to approve
+ */
+export async function approveMilestone(contractId, callerAddress, milestoneIndex) {
+  const contract = new Contract(contractId);
+  const op = contract.call(
+    'approve_milestone',
+    new Address(callerAddress).toScVal(),
+    nativeToScVal(milestoneIndex, { type: 'u32' })
+  );
+  return invokeContract(callerAddress, op, {
+    actorLabel: 'The client wallet',
+    operation: 'approve_milestone',
+  });
+}
+
+/**
+ * Read the milestone array (labels, percentages, statuses) from the contract.
+ */
+export async function getMilestones(contractId, callerAddress) {
+  const contract = new Contract(contractId);
+  const scVal = await simulateReadOnly(callerAddress, contract.call('get_milestones'));
+  if (!scVal) return [];
+  return scValToNative(scVal);
+}
+
+/**
+ * Read the cumulative USDC amount already released to the artist.
+ */
+export async function getReleasedTotal(contractId, callerAddress) {
+  const contract = new Contract(contractId);
+  const scVal = await simulateReadOnly(callerAddress, contract.call('get_released_total'));
   if (!scVal) return 0n;
   return BigInt(scValToNative(scVal));
 }

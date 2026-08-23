@@ -1,30 +1,7 @@
-[package]
-name        = "comi_sure"
-version     = "0.1.0"
-edition     = "2021"
-description = "Trustless USDC escrow for freelance digital art commissions on Stellar."
-license     = "MIT"
-repository  = "https://github.com/HitsukiMok/ComiSure"
-# ── Library configuration ─────────────────────────────────────────────────────
-# cdylib  → compiles to .wasm for on-chain deployment via `stellar contract deploy`
-# rlib    → compiles to a Rust library so the test binary can link against it
-[lib]
-name       = "comi_sure"
-crate-type = ["cdylib", "rlib"]
-path       = "contract/lib.rs"
- 
-# ── Runtime dependencies ──────────────────────────────────────────────────────
-[dependencies]
-soroban-sdk = { version = "22.0.0" }
- 
-# ── Development / test dependencies ──────────────────────────────────────────
-# The "testutils" feature gates Address::generate(), mock_all_auths(),
-# token::StellarAssetClient, and other test-only utilities.
-# It must NOT be compiled into the cdylib artifact — Cargo enforces this
-# by restricting it to [dev-dependencies].
-[dev-dependencies]
-soroban-sdk = { version = "22.0.0", features = ["testutils"] }
- 
+[workspace]
+members  = ["contract", "contract_milestone"]
+resolver = "2"
+
 # ── Release profile — Wasm optimisation ──────────────────────────────────────
 # These flags produce the smallest, fastest Wasm binary for on-chain deployment:
 #   opt-level = "z"       → size-optimised (smaller contract = lower upload fee)

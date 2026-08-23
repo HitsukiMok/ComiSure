@@ -31,3 +31,15 @@ export const disputeService = {
   getAll: () => api.get('/disputes').then(res => res.data),
   resolve: (id, resolution) => api.patch(`/disputes/${id}/resolve?resolution=${resolution}`).then(res => res.data),
 };
+
+export const milestoneService = {
+  getMilestones: (id) => api.get(`/contracts/${id}/milestones`).then(res => res.data),
+  approve: (id, index) => api.post(`/contracts/${id}/milestones/${index}/approve`).then(res => res.data),
+};
+
+export const reviewService = {
+  submit: (data) => api.post('/reviews', data).then(res => res.data),
+  getForWallet: (wallet, { offset, limit } = {}) => api.get(`/reviews/${wallet}`, { params: { offset, limit } }).then(res => res.data),
+  getReputation: (wallet, config) => api.get(`/reputation/${wallet}`, config).then(res => res.data),
+  adminDelete: (reviewId) => api.delete(`/reviews/${reviewId}`).then(res => res.data),
+};
