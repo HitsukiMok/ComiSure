@@ -137,7 +137,6 @@ def send_push(subscriptions: list, payload: dict, session: Session):
         return
 
     from pywebpush import webpush, WebPushException
-    from models import PushSubscription
 
     data = json.dumps(payload)
 
